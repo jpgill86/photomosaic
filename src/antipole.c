@@ -1,17 +1,6 @@
-#include <math.h>    /* sqrt, pow */
+#include <math.h>    /* fmax */
 #include <stdlib.h>  /* NULL */
 #include "antipole.h"
-
-
-// Calculate the Euclidian distance between two points
-double
-dist( struct ap_Point *p1, struct ap_Point *p2 ) {
-   int i;
-   double sum = 0;
-   for( i = 0; i < DIM; i++ )
-      sum += pow( p1->vector[i] - p2->vector[i] , 2);
-   return sqrt( sum );
-}
 
 
 // ...
@@ -40,7 +29,7 @@ adapted_approx_antipoles( struct ap_List *set, double radius ) {
 
 // ...
 struct ap_Tree*
-build_tree( struct ap_List *set, double radius, struct ap_List *antipoles ) {
+build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, double (*dist)( struct ap_Point *p1, struct ap_Point *p2 ) ) {
    // Tree to be returned
    struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
       
@@ -87,8 +76,8 @@ build_tree( struct ap_List *set, double radius, struct ap_List *antipoles ) {
    }
 
    // Build children
-   new_tree->left  = build_tree( set_a, radius, check( set_a, radius, new_tree->a ) );
-   new_tree->right = build_tree( set_b, radius, check( set_b, radius, new_tree->b ) );
+   new_tree->left  = build_tree( set_a, radius, check( set_a, radius, new_tree->a ), dist );
+   new_tree->right = build_tree( set_b, radius, check( set_b, radius, new_tree->b ), dist );
 
    return new_tree;
 }
