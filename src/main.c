@@ -1,12 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdio.h>      /* printf */
+#include <stdlib.h>     /* rand, time */
 #include "antipole.h"
 
 int main() {
-   printf(" -- PHOTOMOSAIC -- \n");
+   printf(" ----- PHOTOMOSAIC ----- \n");
 
    int i;
-   struct point x, y;
+   struct ap_Point x, y;
    srand(time(NULL));
    for( i = 0; i < DIM; i++ ) {
       x.vector[i] = rand() % 256;
@@ -19,7 +19,7 @@ int main() {
    for( i = 0; i < DIM; i++ )
       printf("%d ", y.vector[i]);
    printf("\n");
-   printf("%f\n", dist(x,y));
+   printf("%f\n", dist(&x,&y));
 
    return 0;
 }
