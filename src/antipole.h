@@ -1,6 +1,8 @@
 #ifndef ANTIPOLE_H
 #define ANTIPOLE_H 
 
+#define DIST_FUNC double (*dist)( struct ap_Point *p1, struct ap_Point *p2 )
+
 struct ap_Point {
    int id;                       /* point id */
    void *vec;                    /* position vector */
@@ -29,12 +31,16 @@ struct ap_Tree {
    struct ap_Cluster *cluster;   /* if leaf, pointer to cluster */
 };
 
-struct ap_Tree* build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, double (*dist)( struct ap_Point *p1, struct ap_Point *p2 ) );
-struct ap_Cluster* make_cluster( struct ap_List *set, double (*dist)( struct ap_Point *p1, struct ap_Point *p2 ) );
+struct ap_Tree* build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC );
+struct ap_Cluster* make_cluster( struct ap_List *set, DIST_FUNC );
 void add_point( struct ap_List **set, struct ap_Point *p, double dist );
-struct ap_List* adapted_approx_antipoles( struct ap_List *set, double radius );
+void free_list( struct ap_List *set );
+
+struct ap_Point* find_1_median( struct ap_List *set, DIST_FUNC );
 struct ap_Point* approx_1_median( struct ap_List *set );
-struct ap_List* check( struct ap_List *set, double radius, struct ap_Point *antipole );
+
+struct ap_List* adapted_approx_antipoles( struct ap_List *set, double target_radius );
+struct ap_List* check( struct ap_List *set, double target_radius, struct ap_Point *antipole );
 
 #endif /* ANTIPOLE_H */
 

@@ -12,7 +12,7 @@
 // point, and the radii of the sub-sets. Leaves contain a
 // cluster of points.
 struct ap_Tree*
-build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, double (*dist)( struct ap_Point *p1, struct ap_Point *p2 ) ) {
+build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC ) {
 
    // Allocate space for the new ap_Tree
    struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
@@ -20,7 +20,7 @@ build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, doubl
       
    // Determine if this tree is an internal node or a leaf
    if( antipoles == NULL ) {
-      antipoles = adapted_approx_antipoles( set, radius );
+      antipoles = adapted_approx_antipoles( set, target_radius );
       if( antipoles == NULL ) {
          // ...
          new_tree->is_leaf = 1;
@@ -36,13 +36,11 @@ build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, doubl
    new_tree->b = antipoles->next->p;
 
    // Process the members of set
-   struct ap_List *index, *set_a, *set_b;
+   struct ap_List *set_a, *set_b, *index = set;
    double dist_a, dist_b;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
-   index->next = set;
-   while( index->next != NULL ) {
-      index = index->next;
+   while( index != NULL ) {
       // Determine to which antipole the index is nearest
       dist_a = dist( new_tree->a, index->p );
       dist_b = dist( new_tree->b, index->p );
@@ -55,11 +53,13 @@ build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, doubl
          add_point( &set_b, index->p, dist_b );
          new_tree->radius_b = fmax( dist_b, new_tree->radius_b );
       }
+
+      index = index->next;
    }
 
    // Build children
-   new_tree->left  = build_tree( set_a, radius, check( set_a, radius, new_tree->a ), dist );
-   new_tree->right = build_tree( set_b, radius, check( set_b, radius, new_tree->b ), dist );
+   new_tree->left  = build_tree( set_a, target_radius, check( set_a, target_radius, new_tree->a ), dist );
+   new_tree->right = build_tree( set_b, target_radius, check( set_b, target_radius, new_tree->b ), dist );
 
    return new_tree;
 }
@@ -71,7 +71,7 @@ build_tree( struct ap_List *set, double radius, struct ap_List *antipoles, doubl
 // another to group together), the identity of the geometric
 // median of the cluster, and the cluster radius.
 struct ap_Cluster*
-make_cluster( struct ap_List *set, double (*dist)( struct ap_Point *p1, struct ap_Point *p2 ) ) {
+make_cluster( struct ap_List *set, DIST_FUNC ) {
 
    // Allocate space for the new ap_Cluster
    struct ap_Cluster *new_cluster = malloc( sizeof( struct ap_Cluster ) );
@@ -81,13 +81,11 @@ make_cluster( struct ap_List *set, double (*dist)( struct ap_Point *p1, struct a
    new_cluster->centroid = approx_1_median( set );
 
    // Process the members of the set
-   struct ap_List *index;
+   struct ap_List *index = set;
    double dist_centroid;
    //new_cluster->size = 0;
    new_cluster->radius = 0;
-   index->next = set;
-   while( index->next != NULL ) {
-      index = index->next;
+   while( index != NULL ) {
       // For every point in the set (besides the centroid), find
       // the distance to the centroid, add the point to the list
       // of points in the cluster, and update the radius of the
@@ -99,6 +97,8 @@ make_cluster( struct ap_List *set, double (*dist)( struct ap_Point *p1, struct a
          //new_cluster->size++;
          new_cluster->radius = fmax( new_cluster->radius, dist_centroid );
       }
+
+      index = index->next;
    }
 
    return new_cluster;
@@ -144,9 +144,47 @@ add_point( struct ap_List **set, struct ap_Point *p, double dist ) {
 }
 
 
+// Recursively free up memory used by an ap_List linked
+// list.
+void
+free_list( struct ap_List *set ) {
+
+   if( set->next != NULL )
+      free_list( set->next );
+   free( set );
+}
+
+
 // ...
-struct ap_List*
-adapted_approx_antipoles( struct ap_List *set, double radius ) {
+struct ap_Point*
+find_1_median( struct ap_List *set, DIST_FUNC ) {
+
+   // ...
+   struct ap_Point *med = NULL;
+   double min_sum_dist = -1;
+   double sum_dist;
+
+   // ...
+   struct ap_List *i = set;
+   while( i != NULL ) {
+      sum_dist = 0;
+      struct ap_List *j = set;
+      while( j != NULL ) {
+         if( i->p != j->p )
+            sum_dist += dist( i->p, j->p );
+         j = j->next;
+      }
+
+      // Replace best if better...
+      if( min_sum_dist < 0 || sum_dist < min_sum_dist ) {
+         min_sum_dist = sum_dist;
+         med = i->p;
+      }
+
+      i = i->next;
+   }
+
+   return med;
 }
 
 
@@ -158,7 +196,13 @@ approx_1_median( struct ap_List *set ) {
 
 // ...
 struct ap_List*
-check( struct ap_List *set, double radius, struct ap_Point *antipole ) {
+adapted_approx_antipoles( struct ap_List *set, double target_radius ) {
+}
+
+
+// ...
+struct ap_List*
+check( struct ap_List *set, double target_radius, struct ap_Point *antipole ) {
 }
 
 

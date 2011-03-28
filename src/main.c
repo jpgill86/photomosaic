@@ -5,7 +5,7 @@
 #include "antipole.h"
 
 
-const int DIM = 3;         /* dimensionality of the mean RGB data */
+const int DIM = 2;         /* dimensionality of the mean RGB data */
 typedef uint8_t VEC_TYPE;  /* data type of the mean RGB data */
 
 // Calculate the Euclidian distance between two points
@@ -22,35 +22,50 @@ dist( struct ap_Point *p1, struct ap_Point *p2 ) {
 int main() {
    printf(" ----- PHOTOMOSAIC ----- \n");
 
-   int i;
-   struct ap_Point x, y;
+   // Create and initialize an array of ap_Points
+   // with random vector data
+   int i, j, n = 5;
+   struct ap_Point arr[n];
    srand(time(NULL));
-   x.vec = malloc( sizeof( VEC_TYPE[DIM] ) );
-   y.vec = malloc( sizeof( VEC_TYPE[DIM] ) );
-   for( i = 0; i < DIM; i++ ) {
-      ((VEC_TYPE*)x.vec)[i] = rand() % 256;
-      ((VEC_TYPE*)y.vec)[i] = rand() % 256;
+   for( i = 0; i < n; i++ ) {
+      arr[i].id = i;
+      arr[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
+      for( j = 0; j < DIM; j++ ) {
+         ((VEC_TYPE*)arr[i].vec)[j] = rand() % 256;
+      }
    }
 
-   for( i = 0; i < DIM; i++ )
-      printf("%d ", ((VEC_TYPE*)x.vec)[i]);
-   printf("\n");
-   for( i = 0; i < DIM; i++ )
-      printf("%d ", ((VEC_TYPE*)y.vec)[i]);
-   printf("\n");
-   printf("%f\n", dist(&x,&y));
+   // Print the vector for each ap_Point
+   for( i = 0; i < n; i++ ) {
+      printf("arr[%d].vec = { ", i);
+      for( j = 0; j < DIM; j++ ) {
+         printf("%d ", ((VEC_TYPE*)arr[i].vec)[j]);
+      }
+      printf("}\n");
+   }
+
+   // Print the distances between each ap_Point
+   for( i = 0; i < n; i++ )
+      for( j = i+1; j < n; j++ )
+            printf("dist(arr[%d], arr[%d]) = %f\n", i, j, dist(arr+i, arr+j));
+
+   // Place the ap_Points in an ap_List and find
+   // the 1-median
+   struct ap_List *s = NULL;
+   for( i = 0; i < n; i++ )
+      add_point( &s, &arr[i], 0 );
+   printf("1-median is id=%d\n", find_1_median( s, dist )->id);
+
+   // Test for mem leaks
+   for( i = 0; i < 10000000; i++ ) {
+      free_list(s);
+      s = NULL;
+      for( j = 0; j < n; j++ )
+         add_point( &s, &arr[j], 0 );
+      find_1_median( s, dist );
+   }
 
    printf(" ----------------------- \n");
-
-   struct ap_List *s;
-   printf("s = %p\n", s);
-   add_point( &s, &x, 13 );
-   printf("s = %p\n", s);
-   add_point( &s, &y, 42 );
-   printf("s = %p\n", s);
-
-   printf("%f\n", s->dist);
-   printf("%f\n", s->next->dist);
 
    return 0;
 }
