@@ -57,7 +57,7 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
       index = index->next;
    }
 
-   // Build children
+   // Build children as sub-trees
    new_tree->left  = build_tree( set_a, target_radius, check( set_a, target_radius, new_tree->a ), dist );
    new_tree->right = build_tree( set_b, target_radius, check( set_b, target_radius, new_tree->b ), dist );
 
@@ -112,7 +112,8 @@ make_cluster( struct ap_List *set, DIST_FUNC ) {
 // anything (i.e., the list is currently empty), its value
 // can be changed to the memory address for a newly
 // allocated ap_List (i.e., the list can be given a first
-// member).
+// member). The ap_List pointer should be set to NULL before
+// calling this function if the list is empty.
 void
 add_point( struct ap_List **set, struct ap_Point *p, double dist ) {
 
@@ -155,18 +156,19 @@ free_list( struct ap_List *set ) {
 }
 
 
-// ...
+// Find the exact geometric median of a set of points
 struct ap_Point*
 find_1_median( struct ap_List *set, DIST_FUNC ) {
 
-   // ...
    struct ap_Point *med = NULL;
    double min_sum_dist = -1;
    double sum_dist;
 
-   // ...
+   // Process the members of the set
    struct ap_List *i = set;
    while( i != NULL ) {
+      // For each point in the set, sum its distances from every
+      // other point
       sum_dist = 0;
       struct ap_List *j = set;
       while( j != NULL ) {
@@ -175,7 +177,9 @@ find_1_median( struct ap_List *set, DIST_FUNC ) {
          j = j->next;
       }
 
-      // Replace best if better...
+      // If the sum for a point is found to be the new minimum,
+      // store the value and the identity of the candidate for the
+      // geometric median
       if( min_sum_dist < 0 || sum_dist < min_sum_dist ) {
          min_sum_dist = sum_dist;
          med = i->p;
