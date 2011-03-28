@@ -12,7 +12,7 @@ struct ap_Point {
 
 struct ap_List {
    struct ap_Point *p;           /* point in list */
-   double dist;                  /* distance to ancestor or centroid */
+   double dist;                  /* distance to ancestor, centroid, or query */
    struct ap_List *next;         /* pointer to next member of list */
 };
 
@@ -20,7 +20,7 @@ struct ap_Cluster {
    struct ap_Point *centroid;    /* geometric median of cluster */
    //int size;                   /* number of points in cluster */
    double radius;                /* distance from centroid to farthest point in cluster */
-   struct ap_List *neighbors;    /* list of points in cluster */
+   struct ap_List *members;      /* list of points in cluster */
 };
 
 struct ap_Tree {
@@ -33,11 +33,15 @@ struct ap_Tree {
 
 struct ap_Tree* build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC );
 struct ap_Cluster* make_cluster( struct ap_List *set, DIST_FUNC );
-void add_point( struct ap_List **set, struct ap_Point *p, double dist );
-void free_list( struct ap_List *set );
 
-struct ap_Point* find_1_median( struct ap_List *set, DIST_FUNC );
-struct ap_Point* approx_1_median( struct ap_List *set );
+void add_point( struct ap_List **set, struct ap_Point *p, double dist );
+struct ap_List* copy_list( struct ap_List *set );
+void move_list( int n, struct ap_List **from, struct ap_List **to );
+void free_list( struct ap_List *set );
+int set_size( struct ap_List *set );
+
+struct ap_Point* exact_1_median( struct ap_List *set, DIST_FUNC );
+struct ap_Point* approx_1_median( struct ap_List *set, DIST_FUNC );
 
 struct ap_List* adapted_approx_antipoles( struct ap_List *set, double target_radius );
 struct ap_List* check( struct ap_List *set, double target_radius, struct ap_Point *antipole );
