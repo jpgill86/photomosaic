@@ -40,6 +40,18 @@ int main() {
    printf("\n");
    printf("%f\n", dist(&x,&y));
 
+   printf(" ----------------------- \n");
+
+   struct ap_List *s;
+   printf("s = %p\n", s);
+   add_point( &s, &x, 13 );
+   printf("s = %p\n", s);
+   add_point( &s, &y, 42 );
+   printf("s = %p\n", s);
+
+   printf("%f\n", s->dist);
+   printf("%f\n", s->next->dist);
+
    return 0;
 }
 
