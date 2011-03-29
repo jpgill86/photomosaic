@@ -3,6 +3,8 @@
 #include <stdlib.h>  /* NULL, rand */
 #include "antipole.h"
 
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#define max(a,b) ((a) > (b) ? (a) : (b))
 
 // Create an ap_Tree that serves as the root, an internal
 // node, or a leaf for the tree data structure. Non-leaves
@@ -252,8 +254,8 @@ struct ap_Point*
 approx_1_median( struct ap_List *set, DIST_FUNC ) {
 
    int i;
-   int final_round_size = 3;
    int tournament_size = 3;
+   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
    struct ap_List *contestants = copy_list( set );
 
    // Hold a series of rounds of tournaments
@@ -343,11 +345,10 @@ struct ap_List*
 approx_antipoles( struct ap_List *set, DIST_FUNC ) {
 
    int i;
-   int final_round_size = 3;
    int tournament_size = 3;
+   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
    struct ap_List *contestants = copy_list( set );
-   struct ap_List *index = NULL;
-   struct ap_Point *median = NULL;
+   struct ap_List *antipoles = NULL;
 
    // Hold a series of rounds of tournaments
    while( set_size( contestants ) > final_round_size ) {
@@ -359,25 +360,17 @@ approx_antipoles( struct ap_List *set, DIST_FUNC ) {
          // tournament
          for( i = 0; i < tournament_size; i++ )
             move_list( rand() % set_size( contestants ), &contestants, &tournament );
-         // Find the winners of this tournament and discard the loser
-         median = exact_1_median( tournament, dist );
-         index = tournament;
-         while( index != NULL ) {
-            if( index->p != median )
-               add_point( &winners, index->p, 0 );
-            index = index->next;
-         }
+         // Find the winners of this tournament and discard the losers
+         antipoles = exact_antipoles( tournament, dist );
+         move_list( 0, &antipoles, &winners );
+         move_list( 0, &antipoles, &winners );
          free_list( tournament );
       }
       // Find the winner among the remaining contestants and
       // discard the losers
-      median = exact_1_median( contestants, dist );
-      index = contestants;
-      while( index != NULL ) {
-         if( index->p != median )
-            add_point( &winners, index->p, 0 );
-         index = index->next;
-      }
+      antipoles = exact_antipoles( contestants, dist );
+      move_list( 0, &antipoles, &winners );
+      move_list( 0, &antipoles, &winners );
       free_list( contestants );
 
       // Fill the pool of contestants with all the winners in
@@ -386,7 +379,7 @@ approx_antipoles( struct ap_List *set, DIST_FUNC ) {
    }
    
    // Find the overall winners and discard the losers
-   struct ap_List *antipoles = exact_antipoles( contestants, dist );
+   antipoles = exact_antipoles( contestants, dist );
    free_list( contestants );
 
    return antipoles;

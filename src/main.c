@@ -5,7 +5,6 @@
 #include <stdlib.h>     /* rand, time */
 #include "antipole.h"
 
-
 const int DIM = 2;         /* dimensionality of the mean RGB data */
 typedef uint8_t VEC_TYPE;  /* data type of the mean RGB data */
 
