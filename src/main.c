@@ -53,13 +53,11 @@ main() {
    */
 
    // Dump the vectors for Mathematica
-   printf("data = {\n");
+   printf("data = {");
    for( i = 0; i < n; i++ ) {
       printf("{%d,%d}", ((VEC_TYPE*)arr[i].vec)[0], ((VEC_TYPE*)arr[i].vec)[1]);
       if( i < n-1 )
-         printf(",\n");
-      else
-         printf("\n");
+         printf(",");
    }
    printf("};\n");
 
@@ -80,7 +78,9 @@ main() {
 
    // Find the antipole pair
    struct ap_List *exact_ap = exact_antipoles( s, dist );
+   struct ap_List *approx_ap = approx_antipoles( s, dist );
    printf("exact antipoles are id=%d and id=%d\n", exact_ap->p->id, exact_ap->next->p->id);
+   printf("approx antipoles are id=%d and id=%d\n", approx_ap->p->id, approx_ap->next->p->id);
 
 
    /*
@@ -125,6 +125,12 @@ main() {
    // Test for mem leaks in exact_antipoles
    for( i = 0; i < 1e7; i++ )
       free_list( exact_antipoles( s, dist ) );
+   */
+
+   /*
+   // Test for mem leaks in approx_antipoles
+   for( i = 0; i < 1e7; i++ )
+      free_list( approx_antipoles( s, dist ) );
    */
 
    /*
