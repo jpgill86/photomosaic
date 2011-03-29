@@ -43,6 +43,8 @@ int set_size( struct ap_List *set );
 struct ap_Point* exact_1_median( struct ap_List *set, DIST_FUNC );
 struct ap_Point* approx_1_median( struct ap_List *set, DIST_FUNC );
 
+struct ap_List* exact_antipoles( struct ap_List *set, DIST_FUNC );
+struct ap_List* approx_antipoles( struct ap_List *set, DIST_FUNC );
 struct ap_List* adapted_approx_antipoles( struct ap_List *set, double target_radius );
 struct ap_List* check( struct ap_List *set, double target_radius, struct ap_Point *antipole );
 

@@ -288,6 +288,60 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
 }
 
 
+// Find the two points in the set that are furthest from one
+// another and return these as an antipole pair
+struct ap_List*
+exact_antipoles( struct ap_List *set, DIST_FUNC ) {
+
+   struct ap_List *antipoles = NULL;
+   double max_dist = 0;
+   double d;
+
+   // Create the antipole list if there are at least two
+   // members in the set
+   if( set != NULL ) {
+      if( set->next != NULL ) {
+         antipoles = malloc( sizeof( struct ap_List ) );
+         antipoles->p = NULL;
+         antipoles->dist = 0;
+         antipoles->next = malloc( sizeof( struct ap_List ) );
+         antipoles->next->p = NULL;
+         antipoles->next->dist = 0;
+         antipoles->next->next = NULL;
+      }
+   }
+
+   // Process the members of the set
+   struct ap_List *i = set, *j;
+   while( i != NULL ) {
+      j = i->next;
+      while( j != NULL ) {
+         // Calulate the distance between the two points, and if
+         // their distance is the greatest found so far, make them
+         // the new antipole pair
+         d = dist( i->p, j->p );
+         if( d > max_dist ) {
+            max_dist = d;
+            antipoles->p = i->p;
+            antipoles->dist = max_dist;
+            antipoles->next->p = j->p;
+            antipoles->next->dist = max_dist;
+         }
+         j = j->next;
+      }
+      i = i->next;
+   }
+
+   return antipoles;
+}
+
+
+// ...
+struct ap_List*
+approx_antipoles( struct ap_List *set, DIST_FUNC ) {
+}
+
+
 // ...
 struct ap_List*
 adapted_approx_antipoles( struct ap_List *set, double target_radius ) {

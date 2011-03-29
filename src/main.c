@@ -78,6 +78,10 @@ main() {
    printf("exact 1-median is id=%d\n", exact_1_median( s, dist )->id);
    printf("approx 1-median is id=%d\n", approx_1_median( s, dist )->id);
 
+   // Find the antipole pair
+   struct ap_List *exact_ap = exact_antipoles( s, dist );
+   printf("exact antipoles are id=%d and id=%d\n", exact_ap->p->id, exact_ap->next->p->id);
+
 
    /*
    // Copy s into t
@@ -115,6 +119,12 @@ main() {
    // Test for mem leaks in approx_1_median
    for( i = 0; i < 1e7; i++ )
       approx_1_median( s, dist );
+   */
+
+   /*
+   // Test for mem leaks in exact_antipoles
+   for( i = 0; i < 1e7; i++ )
+      free_list( exact_antipoles( s, dist ) );
    */
 
    /*
