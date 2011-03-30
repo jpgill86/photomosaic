@@ -158,29 +158,25 @@ copy_list( struct ap_List *set ) {
 void
 move_list( int n, struct ap_List **from, struct ap_List **to ) {
 
-   int count = 0;
-   struct ap_List *index = *from;
-   struct ap_List *before = NULL, *match = index, *after = index->next;
+   int i;
+   struct ap_List *before = NULL, *index = *from;
 
    // Find the ap_List to be moved in match, and store the
    // links to and from it for later user
-   while( count < n ) {
+   for( i = 0; i < n; i++ ) {
       before = index;
       index = index->next;
-      match = index;
-      after = index->next;
-      count++;
    }
 
-   // Remove match from *from
-   if( *from == NULL || n == 0 )
-      *from = after;
+   // Remove index from *from
+   if( n == 0 )
+      *from = index->next;
    else
-      before->next = after;
+      before->next = index->next;
 
-   // Prepend match to *to
-   match->next = *to;
-   *to = match;
+   // Prepend index to *to
+   index->next = *to;
+   *to = index;
 }
 
 
@@ -190,8 +186,7 @@ void
 free_list( struct ap_List *set ) {
 
    if( set != NULL ) {
-      if( set->next != NULL )
-         free_list( set->next );
+      free_list( set->next );
       free( set );
    }
 }
@@ -202,10 +197,9 @@ int
 set_size( struct ap_List *set ) {
 
    int size = 0;
-   struct ap_List *index = set;
-   while( index != NULL ) {
+   while( set != NULL ) {
       size++;
-      index = index->next;
+      set = set->next;
    }
    return size;
 }
@@ -215,32 +209,33 @@ set_size( struct ap_List *set ) {
 struct ap_Point*
 exact_1_median( struct ap_List *set, DIST_FUNC ) {
 
+   int i, j, d, size = set_size( set );
+   struct ap_List *i_list, *j_list;
+
+   // Initialize the array of distance sums
+   double sums[ size ];
+   for( i = 0; i < size; i++ )
+      sums[ i ] = 0;
+
+   // Calculate the distance between each pair of points and
+   // add each distance to the distance sums for each point in
+   // the pair
+   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
+      for( j = i + 1, j_list = i_list->next; j_list != NULL; j++, j_list = j_list->next ) {
+         d = dist( i_list->p, j_list->p );
+         sums[ i ] += d;
+         sums[ j ] += d;
+      }
+   }
+
+   // Identify the point with the minimum distance sum
+   double min_sum = -1;
    struct ap_Point *median = NULL;
-   double min_sum_dist = -1;
-   double sum_dist;
-
-   // Process the members of the set
-   struct ap_List *i = set;
-   while( i != NULL ) {
-      // For each point in the set, sum its distances from every
-      // other point
-      sum_dist = 0;
-      struct ap_List *j = set;
-      while( j != NULL ) {
-         if( i->p != j->p )
-            sum_dist += dist( i->p, j->p );
-         j = j->next;
+   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
+      if( sums[ i ] < min_sum || min_sum < 0 ) {
+         min_sum = sums[ i ];
+         median = i_list->p;
       }
-
-      // If the sum for a point is found to be the new minimum,
-      // store the value and the identity of the candidate for the
-      // geometric median
-      if( min_sum_dist < 0 || sum_dist < min_sum_dist ) {
-         min_sum_dist = sum_dist;
-         median = i->p;
-      }
-
-      i = i->next;
    }
 
    return median;
@@ -253,37 +248,53 @@ exact_1_median( struct ap_List *set, DIST_FUNC ) {
 struct ap_Point*
 approx_1_median( struct ap_List *set, DIST_FUNC ) {
 
-   int i;
-   int tournament_size = 3;
+   struct ap_Point *median;
+   struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
-   struct ap_List *contestants = copy_list( set );
 
    // Hold a series of rounds of tournaments
-   while( set_size( contestants ) > final_round_size ) {
+   while( contestants_size > final_round_size ) {
       // Find the winners that will continue to the next round
-      struct ap_List *winners = NULL;
-      while( set_size( contestants ) >= 2 * tournament_size ) {
-         struct ap_List *tournament = NULL;
+      winners = NULL;
+      winners_size = 0;
+      while( contestants_size >= 2 * tournament_size ) {
+         tournament = NULL;
          // Move tournament_size random members of contestants into
          // tournament
-         for( i = 0; i < tournament_size; i++ )
-            move_list( rand() % set_size( contestants ), &contestants, &tournament );
+         for( i = 0; i < tournament_size; i++ ) {
+            move_list( rand() % contestants_size, &contestants, &tournament );
+            contestants_size--;
+         }
          // Find the winner of this tournament and discard the losers
-         add_point( &winners, exact_1_median( tournament, dist ), 0 );
+         median = exact_1_median( tournament, dist );
+         for( i = 0, index = tournament; i < tournament_size; i++, index = index->next ) {
+            if( index->p == median )
+               break;
+         }
+         move_list( i, &tournament, &winners );
+         winners_size++;
          free_list( tournament );
       }
       // Find the winner among the remaining contestants and
       // discard the losers
-      add_point( &winners, exact_1_median( contestants, dist ), 0 );
+      median = exact_1_median( contestants, dist );
+      for( i = 0, index = contestants; i < contestants_size; i++, index = index->next ) {
+         if( index->p == median )
+            break;
+      }
+      move_list( i, &contestants, &winners );
+      winners_size++;
       free_list( contestants );
 
       // Fill the pool of contestants with all the winners in
       // preparation for the next round
       contestants = winners;
+      contestants_size = winners_size;
    }
    
    // Find the overall winner and discard the losers
-   struct ap_Point *median = exact_1_median( contestants, dist );
+   median = exact_1_median( contestants, dist );
    free_list( contestants );
 
    return median;
@@ -301,16 +312,14 @@ exact_antipoles( struct ap_List *set, DIST_FUNC ) {
 
    // Create the antipole list if there are at least two
    // members in the set
-   if( set != NULL ) {
-      if( set->next != NULL ) {
-         antipoles = malloc( sizeof( struct ap_List ) );
-         antipoles->p = NULL;
-         antipoles->dist = 0;
-         antipoles->next = malloc( sizeof( struct ap_List ) );
-         antipoles->next->p = NULL;
-         antipoles->next->dist = 0;
-         antipoles->next->next = NULL;
-      }
+   if( set != NULL && set->next != NULL ) {
+      antipoles = malloc( sizeof( struct ap_List ) );
+      antipoles->p = NULL;
+      antipoles->dist = 0;
+      antipoles->next = malloc( sizeof( struct ap_List ) );
+      antipoles->next->p = NULL;
+      antipoles->next->dist = 0;
+      antipoles->next->next = NULL;
    }
 
    // Process the members of the set
