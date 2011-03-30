@@ -16,7 +16,7 @@
 struct ap_Tree*
 build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC ) {
 
-   // Allocate space for the new ap_Tree
+   // Create the new ap_Tree
    struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
    assert( new_tree );
       
@@ -32,23 +32,21 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
       }
    }
 
+   // If this tree is an internal node, initialize it
    new_tree->is_leaf = 0;
-
-   // Store pointers to the antipoles in this set
    new_tree->a = antipoles->p;
    new_tree->b = antipoles->next->p;
-
-   // Process the members of set
-   struct ap_List *index = set, *set_a = NULL, *set_b = NULL;
-   double dist_a, dist_b;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
-   while( index != NULL ) {
-      // For each point in the set, find the distance to each
-      // antipole, store the distances in the point's ancestor
-      // list, add the point to the subset belonging to the
-      // nearest antipole, and update the radius of the subset
-      // if necessary
+
+   // For each point in the set, find the distance to each
+   // antipole, store the distances in the point's ancestor
+   // list, add the point to the subset belonging to the
+   // nearest antipole, and update the radius of the subset if
+   // necessary
+   double dist_a, dist_b;
+   struct ap_List *index, *set_a = NULL, *set_b = NULL;
+   for( index = set; index != NULL; index = index->next ) {
       dist_a = dist( new_tree->a, index->p );
       dist_b = dist( new_tree->b, index->p );
       add_point( &(index->p->ancestors), new_tree->a, dist_a );
@@ -60,9 +58,8 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
          add_point( &set_b, index->p, dist_b );
          new_tree->radius_b = fmax( dist_b, new_tree->radius_b );
       }
-
-      index = index->next;
    }
+   free( set );
 
    // Build subtrees as children for this node using the two
    // point subsets
@@ -81,24 +78,22 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
 struct ap_Cluster*
 make_cluster( struct ap_List *set, DIST_FUNC ) {
 
-   // Allocate space for the new ap_Cluster
+   struct ap_List *index;
+   double dist_centroid;
+
+   // Create the new ap_Cluster and initialize it
    struct ap_Cluster *new_cluster = malloc( sizeof( struct ap_Cluster ) );
    assert( new_cluster );
-
-   // Find the geometric median of the cluster
    new_cluster->centroid = approx_1_median( set, dist );
-
-   // Process the members of the set
-   struct ap_List *index = set;
-   new_cluster->members = NULL;
-   double dist_centroid;
    //new_cluster->size = 0;
    new_cluster->radius = 0;
-   while( index != NULL ) {
-      // For every point in the set (besides the centroid), find
-      // the distance to the centroid, add the point to the list
-      // of points in the cluster, and update the radius of the
-      // cluster if necessary
+   new_cluster->members = NULL;
+
+   // For every point in the set (besides the centroid), find
+   // the distance to the centroid, add the point to the list
+   // of points in the cluster, and update the radius of the
+   // cluster if necessary
+   for( index = set; index != NULL; index = index->next ) {
       if( index->p != new_cluster->centroid ) {
          dist_centroid = dist( new_cluster->centroid, index->p );
          //index->p->dist_centroid = dist_centroid;
@@ -106,10 +101,9 @@ make_cluster( struct ap_List *set, DIST_FUNC ) {
          //new_cluster->size++;
          new_cluster->radius = fmax( new_cluster->radius, dist_centroid );
       }
-
-      index = index->next;
    }
 
+   free( set );
    return new_cluster;
 }
 
@@ -302,96 +296,91 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
 
 
 // Find the two points in the set that are furthest from one
-// another and return these as an antipole pair
-struct ap_List*
-exact_antipoles( struct ap_List *set, DIST_FUNC ) {
+// another and place the indices in ap1 and ap2.
+void
+exact_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
 
-   struct ap_List *antipoles = NULL;
-   double max_dist = 0;
-   double d;
+   int i, j;
+   struct ap_List *i_list, *j_list;
+   double d, max_dist = 0;
 
-   // Create the antipole list if there are at least two
-   // members in the set
-   if( set != NULL && set->next != NULL ) {
-      antipoles = malloc( sizeof( struct ap_List ) );
-      antipoles->p = NULL;
-      antipoles->dist = 0;
-      antipoles->next = malloc( sizeof( struct ap_List ) );
-      antipoles->next->p = NULL;
-      antipoles->next->dist = 0;
-      antipoles->next->next = NULL;
-   }
-
-   // Process the members of the set
-   struct ap_List *i = set, *j;
-   while( i != NULL ) {
-      j = i->next;
-      while( j != NULL ) {
-         // Calulate the distance between the two points, and if
-         // their distance is the greatest found so far, make them
-         // the new antipole pair
-         d = dist( i->p, j->p );
+   // Calculate the distance between each pair of points and
+   // if a distance is greater than any found yet, make the
+   // pair of points the new antipole pair
+   for( i = 0, i_list = set; i_list != NULL; i++, i_list = i_list->next ) {
+      for( j = i + 1, j_list = i_list->next; j_list != NULL; j++, j_list = j_list->next ) {
+         d = dist( i_list->p, j_list->p );
          if( d > max_dist ) {
+            *ap1 = i;
+            *ap2 = j;
             max_dist = d;
-            antipoles->p = i->p;
-            antipoles->dist = max_dist;
-            antipoles->next->p = j->p;
-            antipoles->next->dist = max_dist;
          }
-         j = j->next;
       }
-      i = i->next;
    }
-
-   return antipoles;
 }
 
 
 // Find an approximation for the antipole pair of a set
-// of points. The user should initialize the random number
-// generator using srand.
-struct ap_List*
-approx_antipoles( struct ap_List *set, DIST_FUNC ) {
+// of points and place the indices in ap1 and ap2. The user
+// should initialize the random number generator using
+// srand.
+void
+approx_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
 
-   int i;
-   int tournament_size = 3;
+   struct ap_Point *p1, *p2;
+   struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
-   struct ap_List *contestants = copy_list( set );
-   struct ap_List *antipoles = NULL;
 
    // Hold a series of rounds of tournaments
-   while( set_size( contestants ) > final_round_size ) {
+   while( contestants_size > final_round_size ) {
       // Find the winners that will continue to the next round
-      struct ap_List *winners = NULL;
-      while( set_size( contestants ) >= 2 * tournament_size ) {
-         struct ap_List *tournament = NULL;
+      winners = NULL;
+      winners_size = 0;
+      while( contestants_size >= 2 * tournament_size ) {
+         tournament = NULL;
          // Move tournament_size random members of contestants into
          // tournament
-         for( i = 0; i < tournament_size; i++ )
-            move_list( rand() % set_size( contestants ), &contestants, &tournament );
+         for( i = 0; i < tournament_size; i++ ) {
+            move_list( rand() % contestants_size, &contestants, &tournament );
+            contestants_size--;
+         }
          // Find the winners of this tournament and discard the losers
-         antipoles = exact_antipoles( tournament, dist );
-         move_list( 0, &antipoles, &winners );
-         move_list( 0, &antipoles, &winners );
+         exact_antipoles( tournament, ap1, ap2, dist );
+         move_list( *ap2, &tournament, &winners );
+         move_list( *ap1, &tournament, &winners );
+         winners_size += 2;
          free_list( tournament );
       }
-      // Find the winner among the remaining contestants and
+      // Find the winners among the remaining contestants and
       // discard the losers
-      antipoles = exact_antipoles( contestants, dist );
-      move_list( 0, &antipoles, &winners );
-      move_list( 0, &antipoles, &winners );
+      exact_antipoles( contestants, ap1, ap2, dist );
+      move_list( *ap2, &contestants, &winners );
+      move_list( *ap1, &contestants, &winners );
+      winners_size += 2;
       free_list( contestants );
 
       // Fill the pool of contestants with all the winners in
       // preparation for the next round
       contestants = winners;
+      contestants_size = winners_size;
    }
    
    // Find the overall winners and discard the losers
-   antipoles = exact_antipoles( contestants, dist );
+   exact_antipoles( contestants, ap1, ap2, dist );
+   for( i = 0, index = contestants; i < *ap1; i++ )
+      index = index->next;
+   p1 = index->p;
+   for( i = 0, index = contestants; i < *ap2; i++ )
+      index = index->next;
+   p2 = index->p;
+   for( i = 0, index = set; index != NULL; i++, index = index->next )
+      if( index->p == p1 )
+         *ap1 = i;
+   for( i = 0, index = set; index != NULL; i++, index = index->next )
+      if( index->p == p2 )
+         *ap2 = i;
    free_list( contestants );
-
-   return antipoles;
 }
 
 

@@ -30,7 +30,11 @@ main() {
    // with random vector data
    int i, j, n = 20;
    struct ap_Point arr[n];
-   srand(time(NULL));
+   int seed = time(NULL);
+   srand(seed);
+   printf("DIM = %d\n", DIM);
+   printf("n = %d\n", n);
+   printf("seed = %d\n", seed);
    for( i = 0; i < n; i++ ) {
       arr[i].id = i;
       arr[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
@@ -72,14 +76,34 @@ main() {
    struct ap_List *s = NULL;
    for( i = 0; i < n; i++ )
       add_point( &s, &arr[i], 0 );
-   printf("exact 1-median is id=%d\n", exact_1_median( s, dist )->id);
-   printf("approx 1-median is id=%d\n", approx_1_median( s, dist )->id);
+   printf("exact 1-median    id=%d\n", exact_1_median( s, dist )->id);
+   printf("approx 1-median   id=%d\n", approx_1_median( s, dist )->id);
 
-   // Find the antipole pair
-   struct ap_List *exact_ap = exact_antipoles( s, dist );
-   struct ap_List *approx_ap = approx_antipoles( s, dist );
-   printf("exact antipoles are id=%d and id=%d\n", exact_ap->p->id, exact_ap->next->p->id);
-   printf("approx antipoles are id=%d and id=%d\n", approx_ap->p->id, approx_ap->next->p->id);
+   // Find the exact antipole pair
+   int ap1, ap2, id1, id2;
+   struct ap_List *index;
+   exact_antipoles( s, &ap1, &ap2, dist );
+   index = s;
+   for( i = 0; i < ap1; i++ )
+      index = index->next;
+   id1 = index->p->id;
+   index = s;
+   for( i = 0; i < ap2; i++ )
+      index = index->next;
+   id2 = index->p->id;
+   printf("exact antipoles   id=%d and id=%d\n", id1, id2);
+
+   // Find the approx antipole pair
+   approx_antipoles( s, &ap1, &ap2, dist );
+   index = s;
+   for( i = 0; i < ap1; i++ )
+      index = index->next;
+   id1 = index->p->id;
+   index = s;
+   for( i = 0; i < ap2; i++ )
+      index = index->next;
+   id2 = index->p->id;
+   printf("approx antipoles  id=%d and id=%d\n", id1, id2);
 
 
    /*
@@ -123,13 +147,13 @@ main() {
    /*
    // Test for mem leaks in exact_antipoles
    for( i = 0; i < 1e7; i++ )
-      free_list( exact_antipoles( s, dist ) );
+      exact_antipoles( s, &ap1, &ap2, dist );
    */
 
    /*
    // Test for mem leaks in approx_antipoles
    for( i = 0; i < 1e7; i++ )
-      free_list( approx_antipoles( s, dist ) );
+      approx_antipoles( s, &ap1, &ap2, dist );
    */
 
    /*
