@@ -13,11 +13,11 @@
 // subset of points that is nearest its respective antipole
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
-struct ap_Tree*
-build_tree( struct ap_List *set, double target_radius, struct ap_Point *antipole_a, struct ap_Point *antipole_b, DIST_FUNC ) {
+ap_Tree*
+build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, DIST_FUNC ) {
 
    // Create the new ap_Tree
-   struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
+   ap_Tree *new_tree = malloc( sizeof( ap_Tree ) );
    assert( new_tree );
 
    // Determine if this tree is an internal node or a leaf
@@ -45,7 +45,7 @@ build_tree( struct ap_List *set, double target_radius, struct ap_Point *antipole
    // nearest antipole, and update the radius of the subset if
    // necessary
    double dist_a, dist_b;
-   struct ap_List *index, *set_a = NULL, *set_b = NULL;
+   ap_List *index, *set_a = NULL, *set_b = NULL;
    for( index = set; index != NULL; index = index->next ) {
       dist_a = dist( new_tree->a, index->p );
       dist_b = dist( new_tree->b, index->p );
@@ -79,14 +79,14 @@ build_tree( struct ap_List *set, double target_radius, struct ap_Point *antipole
 // (already determined to be sufficiently close to one
 // another to group together), the identity of the geometric
 // median of the cluster, and the cluster radius.
-struct ap_Cluster*
-make_cluster( struct ap_List *set, DIST_FUNC ) {
+ap_Cluster*
+make_cluster( ap_List *set, DIST_FUNC ) {
 
-   struct ap_List *index;
+   ap_List *index;
    double dist_centroid;
 
    // Create the new ap_Cluster and initialize it
-   struct ap_Cluster *new_cluster = malloc( sizeof( struct ap_Cluster ) );
+   ap_Cluster *new_cluster = malloc( sizeof( ap_Cluster ) );
    assert( new_cluster );
    approx_1_median( set, &(new_cluster->centroid), dist );
    //new_cluster->size = 0;
@@ -120,9 +120,9 @@ make_cluster( struct ap_List *set, DIST_FUNC ) {
 // calling this function if the list is empty; otherwise the
 // list may not terminate properly.
 void
-add_point( struct ap_List **set, struct ap_Point *p, double dist ) {
+add_point( ap_List **set, ap_Point *p, double dist ) {
 
-   struct ap_List *new_list_member = malloc( sizeof( struct ap_List ) );
+   ap_List *new_list_member = malloc( sizeof( ap_List ) );
    assert( new_list_member );
    new_list_member->p = p;
    new_list_member->dist = dist;
@@ -140,10 +140,10 @@ add_point( struct ap_List **set, struct ap_Point *p, double dist ) {
 // to NULL before calling this function if the list is
 // empty; otherwise the list may not terminate properly.
 void
-move_point( struct ap_Point *p, struct ap_List **from, struct ap_List **to ) {
+move_point( ap_Point *p, ap_List **from, ap_List **to ) {
 
    int i = 0;
-   struct ap_List *before = NULL, *index = *from;
+   ap_List *before = NULL, *index = *from;
 
    // Find the first ap_List containing p, and store the link
    // preceding it for later user
@@ -175,10 +175,10 @@ move_point( struct ap_Point *p, struct ap_List **from, struct ap_List **to ) {
 // list is empty; otherwise the list may not terminate
 // properly.
 void
-move_nth_point( int n, struct ap_List **from, struct ap_List **to ) {
+move_nth_point( int n, ap_List **from, ap_List **to ) {
 
    int i;
-   struct ap_List *before = NULL, *index = *from;
+   ap_List *before = NULL, *index = *from;
 
    // Find the n-th ap_List, and store the link preceding it
    // for later user
@@ -200,10 +200,10 @@ move_nth_point( int n, struct ap_List **from, struct ap_List **to ) {
 
 
 // Create a new ap_List with the same contents as set.
-struct ap_List*
-copy_list( struct ap_List *set ) {
+ap_List*
+copy_list( ap_List *set ) {
 
-   struct ap_List *index = set, *new_list = NULL;
+   ap_List *index = set, *new_list = NULL;
    while( index != NULL ) {
       add_point( &new_list, index->p, index->dist );
       index = index->next;
@@ -215,7 +215,7 @@ copy_list( struct ap_List *set ) {
 // Recursively free up memory used by an ap_List linked
 // list.
 void
-free_list( struct ap_List *set ) {
+free_list( ap_List *set ) {
 
    if( set != NULL ) {
       free_list( set->next );
@@ -226,7 +226,7 @@ free_list( struct ap_List *set ) {
 
 // Find the size of a set of points
 int
-list_size( struct ap_List *set ) {
+list_size( ap_List *set ) {
 
    int size = 0;
    while( set != NULL ) {
@@ -240,12 +240,12 @@ list_size( struct ap_List *set ) {
 // Find the exact geometric median of a set of points and
 // store it in median
 void
-exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
+exact_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
 
    *median = NULL;
 
    int i, j, d, size = list_size( set );
-   struct ap_List *i_list, *j_list;
+   ap_List *i_list, *j_list;
 
    // Initialize the array of distance sums
    double sums[ size ];
@@ -279,11 +279,11 @@ exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 // of points and store it in median. The user should
 // initialize the random number generator using srand.
 void
-approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
+approx_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
 
    *median = NULL;
 
-   struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
@@ -328,12 +328,12 @@ approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 // Find the two points in the set that are furthest from one
 // another and store them in antipole_a and antipole_b.
 void
-exact_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, DIST_FUNC ) {
+exact_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   struct ap_List *i_list, *j_list;
+   ap_List *i_list, *j_list;
    double d, max_dist = 0;
 
    // Calculate the distance between each pair of points and
@@ -357,12 +357,12 @@ exact_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Po
 // The user should initialize the random number generator
 // using srand.
 void
-approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, DIST_FUNC ) {
+approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
@@ -408,7 +408,7 @@ approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_P
 
 // ...
 void
-adapted_approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
+adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
@@ -418,7 +418,7 @@ adapted_approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, str
 
 // ...
 void
-check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **antipole_a, struct ap_Point **antipole_b ) {
+check_for_antipoles( ap_List *set, double target_radius, ap_Point *antipole, ap_Point **antipole_a, ap_Point **antipole_b ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;

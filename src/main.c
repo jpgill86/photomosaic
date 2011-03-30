@@ -10,7 +10,7 @@ typedef uint8_t VEC_TYPE;  /* data type of the mean RGB data */
 
 // Calculate the Euclidian distance between two points
 double
-dist( struct ap_Point *p1, struct ap_Point *p2 ) {
+dist( ap_Point *p1, ap_Point *p2 ) {
 
    int i;
    double sum = 0;
@@ -29,7 +29,7 @@ main() {
    // Create and initialize an array of ap_Points
    // with random vector data
    int i, j, n = 20;
-   struct ap_Point arr[n];
+   ap_Point arr[n];
    int seed = time(NULL);
    srand(seed);
    printf("DIM = %d\n", DIM);
@@ -72,19 +72,19 @@ main() {
    */
 
    // Place the ap_Points in an ap_List
-   struct ap_List *s = NULL;
+   ap_List *s = NULL;
    for( i = 0; i < n; i++ )
       add_point( &s, &arr[i], 0 );
 
    // Find the 1-median
-   struct ap_Point *median;
+   ap_Point *median;
    exact_1_median( s, &median, dist );
    printf("exact 1-median    id=%d\n", median->id);
    approx_1_median( s, &median, dist );
    printf("approx 1-median   id=%d\n", median->id);
 
    // Find the antipole pair
-   struct ap_Point *antipole_a, *antipole_b;
+   ap_Point *antipole_a, *antipole_b;
    exact_antipoles( s, &antipole_a, &antipole_b, dist );
    printf("exact antipoles   id=%d and id=%d\n", antipole_a->id, antipole_b->id);
    approx_antipoles( s, &antipole_a, &antipole_b, dist );
@@ -93,8 +93,8 @@ main() {
 
    /*
    // Copy s into t
-   struct ap_List *t = copy_list( s );
-   struct ap_List *i0 = s, *j0 = t;
+   ap_List *t = copy_list( s );
+   ap_List *i0 = s, *j0 = t;
 
    // Move members of t into u
    printf("members of t:\n");
@@ -104,7 +104,7 @@ main() {
       i0 = i0->next;
    }
    printf("moving members of t into u\n", i);
-   struct ap_List *u = NULL;
+   ap_List *u = NULL;
    while( list_size(t) > 0 ) {
       move_list( 0, &t, &u );
    }
