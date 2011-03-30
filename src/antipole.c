@@ -127,16 +127,37 @@ add_point( struct ap_List **set, struct ap_Point *p, double dist ) {
 }
 
 
-// Create a new ap_List with the same contents as set.
-struct ap_List*
-copy_list( struct ap_List *set ) {
+// Move the first instance of point p found in the ap_List
+// *from into the ap_List *to. Requires the addresses of the
+// ap_List pointers so that the moved member can be
+// prepended to *to, and so that if the first member of
+// ap_List *from is moved, the second member can become the
+// new first member. The ap_List pointer *to should be set
+// to NULL before calling this function if the list is
+// empty; otherwise the list may not terminate properly.
+void
+move_point( struct ap_Point *p, struct ap_List **from, struct ap_List **to ) {
 
-   struct ap_List *index = set, *new_list = NULL;
-   while( index != NULL ) {
-      add_point( &new_list, index->p, index->dist );
+   int i = 0;
+   struct ap_List *before = NULL, *index = *from;
+
+   // Find the first ap_List containing p, and store the link
+   // preceding it for later user
+   while( index != NULL && index->p != p ) {
+      before = index;
       index = index->next;
+      i++;
    }
-   return new_list;
+
+   // Remove index from *from
+   if( i == 0 )
+      *from = index->next;
+   else
+      before->next = index->next;
+
+   // Prepend index to *to
+   index->next = *to;
+   *to = index;
 }
 
 
@@ -150,13 +171,13 @@ copy_list( struct ap_List *set ) {
 // list is empty; otherwise the list may not terminate
 // properly.
 void
-move_list( int n, struct ap_List **from, struct ap_List **to ) {
+move_nth_point( int n, struct ap_List **from, struct ap_List **to ) {
 
    int i;
    struct ap_List *before = NULL, *index = *from;
 
-   // Find the ap_List to be moved in match, and store the
-   // links to and from it for later user
+   // Find the n-th ap_List, and store the link preceding it
+   // for later user
    for( i = 0; i < n; i++ ) {
       before = index;
       index = index->next;
@@ -171,6 +192,19 @@ move_list( int n, struct ap_List **from, struct ap_List **to ) {
    // Prepend index to *to
    index->next = *to;
    *to = index;
+}
+
+
+// Create a new ap_List with the same contents as set.
+struct ap_List*
+copy_list( struct ap_List *set ) {
+
+   struct ap_List *index = set, *new_list = NULL;
+   while( index != NULL ) {
+      add_point( &new_list, index->p, index->dist );
+      index = index->next;
+   }
+   return new_list;
 }
 
 
@@ -257,27 +291,19 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
          // Move tournament_size random members of contestants into
          // tournament
          for( i = 0; i < tournament_size; i++ ) {
-            move_list( rand() % contestants_size, &contestants, &tournament );
+            move_nth_point( rand() % contestants_size, &contestants, &tournament );
             contestants_size--;
          }
          // Find the winner of this tournament and discard the losers
          median = exact_1_median( tournament, dist );
-         for( i = 0, index = tournament; i < tournament_size; i++, index = index->next ) {
-            if( index->p == median )
-               break;
-         }
-         move_list( i, &tournament, &winners );
+         move_point( median, &tournament, &winners );
          winners_size++;
          free_list( tournament );
       }
       // Find the winner among the remaining contestants and
       // discard the losers
       median = exact_1_median( contestants, dist );
-      for( i = 0, index = contestants; i < contestants_size; i++, index = index->next ) {
-         if( index->p == median )
-            break;
-      }
-      move_list( i, &contestants, &winners );
+      move_point( median, &contestants, &winners );
       winners_size++;
       free_list( contestants );
 
@@ -296,23 +322,22 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
 
 
 // Find the two points in the set that are furthest from one
-// another and place the indices in ap1 and ap2.
+// another and store them in ap1 and ap2.
 void
-exact_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
+exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
 
-   int i, j;
    struct ap_List *i_list, *j_list;
    double d, max_dist = 0;
 
    // Calculate the distance between each pair of points and
    // if a distance is greater than any found yet, make the
    // pair of points the new antipole pair
-   for( i = 0, i_list = set; i_list != NULL; i++, i_list = i_list->next ) {
-      for( j = i + 1, j_list = i_list->next; j_list != NULL; j++, j_list = j_list->next ) {
+   for( i_list = set; i_list != NULL; i_list = i_list->next ) {
+      for( j_list = i_list->next; j_list != NULL; j_list = j_list->next ) {
          d = dist( i_list->p, j_list->p );
          if( d > max_dist ) {
-            *ap1 = i;
-            *ap2 = j;
+            *ap1 = i_list->p;
+            *ap2 = j_list->p;
             max_dist = d;
          }
       }
@@ -321,13 +346,11 @@ exact_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
 
 
 // Find an approximation for the antipole pair of a set
-// of points and place the indices in ap1 and ap2. The user
-// should initialize the random number generator using
-// srand.
+// of points and store them in ap1 and ap2. The user should
+// initialize the random number generator using srand.
 void
-approx_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
+approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
 
-   struct ap_Point *p1, *p2;
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
@@ -342,21 +365,21 @@ approx_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
          // Move tournament_size random members of contestants into
          // tournament
          for( i = 0; i < tournament_size; i++ ) {
-            move_list( rand() % contestants_size, &contestants, &tournament );
+            move_nth_point( rand() % contestants_size, &contestants, &tournament );
             contestants_size--;
          }
          // Find the winners of this tournament and discard the losers
          exact_antipoles( tournament, ap1, ap2, dist );
-         move_list( *ap2, &tournament, &winners );
-         move_list( *ap1, &tournament, &winners );
+         move_point( *ap1, &tournament, &winners );
+         move_point( *ap2, &tournament, &winners );
          winners_size += 2;
          free_list( tournament );
       }
       // Find the winners among the remaining contestants and
       // discard the losers
       exact_antipoles( contestants, ap1, ap2, dist );
-      move_list( *ap2, &contestants, &winners );
-      move_list( *ap1, &contestants, &winners );
+      move_point( *ap1, &contestants, &winners );
+      move_point( *ap2, &contestants, &winners );
       winners_size += 2;
       free_list( contestants );
 
@@ -368,18 +391,6 @@ approx_antipoles( struct ap_List *set, int *ap1, int *ap2, DIST_FUNC ) {
    
    // Find the overall winners and discard the losers
    exact_antipoles( contestants, ap1, ap2, dist );
-   for( i = 0, index = contestants; i < *ap1; i++ )
-      index = index->next;
-   p1 = index->p;
-   for( i = 0, index = contestants; i < *ap2; i++ )
-      index = index->next;
-   p2 = index->p;
-   for( i = 0, index = set; index != NULL; i++, index = index->next )
-      if( index->p == p1 )
-         *ap1 = i;
-   for( i = 0, index = set; index != NULL; i++, index = index->next )
-      if( index->p == p2 )
-         *ap2 = i;
    free_list( contestants );
 }
 

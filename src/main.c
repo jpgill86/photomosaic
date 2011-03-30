@@ -79,31 +79,12 @@ main() {
    printf("exact 1-median    id=%d\n", exact_1_median( s, dist )->id);
    printf("approx 1-median   id=%d\n", approx_1_median( s, dist )->id);
 
-   // Find the exact antipole pair
-   int ap1, ap2, id1, id2;
-   struct ap_List *index;
+   // Find the antipole pair
+   struct ap_Point *ap1, *ap2;
    exact_antipoles( s, &ap1, &ap2, dist );
-   index = s;
-   for( i = 0; i < ap1; i++ )
-      index = index->next;
-   id1 = index->p->id;
-   index = s;
-   for( i = 0; i < ap2; i++ )
-      index = index->next;
-   id2 = index->p->id;
-   printf("exact antipoles   id=%d and id=%d\n", id1, id2);
-
-   // Find the approx antipole pair
+   printf("exact antipoles   id=%d and id=%d\n", ap1->id, ap2->id);
    approx_antipoles( s, &ap1, &ap2, dist );
-   index = s;
-   for( i = 0; i < ap1; i++ )
-      index = index->next;
-   id1 = index->p->id;
-   index = s;
-   for( i = 0; i < ap2; i++ )
-      index = index->next;
-   id2 = index->p->id;
-   printf("approx antipoles  id=%d and id=%d\n", id1, id2);
+   printf("approx antipoles  id=%d and id=%d\n", ap1->id, ap2->id);
 
 
    /*
