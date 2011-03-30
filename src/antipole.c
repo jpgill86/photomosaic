@@ -242,6 +242,8 @@ list_size( struct ap_List *set ) {
 void
 exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
+   *median = NULL;
+
    int i, j, d, size = list_size( set );
    struct ap_List *i_list, *j_list;
 
@@ -278,6 +280,8 @@ exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 // initialize the random number generator using srand.
 void
 approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
+
+   *median = NULL;
 
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
@@ -326,6 +330,9 @@ approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 void
 exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
 
+   *ap1 = NULL;
+   *ap2 = NULL;
+
    struct ap_List *i_list, *j_list;
    double d, max_dist = 0;
 
@@ -350,6 +357,9 @@ exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **a
 // initialize the random number generator using srand.
 void
 approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
+
+   *ap1 = NULL;
+   *ap2 = NULL;
 
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
@@ -398,12 +408,20 @@ approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **
 // ...
 void
 adapted_approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, double target_radius, DIST_FUNC ) {
+
+   *ap1 = NULL;
+   *ap2 = NULL;
+
 }
 
 
 // ...
 void
 check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **ap1, struct ap_Point **ap2 ) {
+
+   *ap1 = NULL;
+   *ap2 = NULL;
+
 }
 
 
