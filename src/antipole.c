@@ -3,6 +3,10 @@
 #include <stdlib.h>  /* NULL, rand */
 #include "antipole.h"
 
+
+
+#include <stdio.h>
+
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
@@ -14,7 +18,9 @@
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
 ap_Tree*
-build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, DIST_FUNC ) {
+build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC ) {
+   printf("BUILD TREE --- %d\n", level);
+   printf(" |- size = %d\n", list_size(set));
 
    // Create the new ap_Tree
    ap_Tree *new_tree = malloc( sizeof( ap_Tree ) );
@@ -22,22 +28,36 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
 
    // Determine if this tree is an internal node or a leaf
    if( antipole_a == NULL || antipole_b == NULL ) {
-      adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
+      //adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
+      printf(" |- no antipoles found by check\n");
+      approx_antipoles( set, &antipole_a, &antipole_b, dimensionality, dist );
+      if( antipole_a != NULL || antipole_b != NULL ) {
+         if( dist( antipole_a, antipole_b ) <= 2*target_radius ) {
+            printf(" |- dist too small\n");
+            antipole_a = NULL;
+            antipole_b = NULL;
+         } else {
+            printf(" |- dist big enough\n");
+         }
+      }
       if( antipole_a == NULL || antipole_b == NULL ) {
+         printf(" |- splitting condition not satisfied\n");
          // If it is a leaf, create a cluster from the set and return
          // the leaf
          new_tree->is_leaf = 1;
-         new_tree->cluster = make_cluster( set, dist );
+         new_tree->cluster = make_cluster( set, dimensionality, dist );
          return new_tree;
       }
    }
 
+   printf(" |- splitting condition satisfied: d = %f\n", dist(antipole_a,antipole_b));
    // If this tree is an internal node, initialize it
    new_tree->is_leaf = 0;
    new_tree->a = antipole_a;
    new_tree->b = antipole_b;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
+   printf(" |- antipoles have id=%d and id=%d\n", antipole_a->id, antipole_b->id);
 
    // For each point in the set, find the distance to each
    // antipole, store the distances in the point's ancestor
@@ -60,15 +80,20 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
       }
    }
    free( set );
+   printf(" |- a_set has %d\n", list_size(set_a));
+   printf(" |- b_set has %d\n", list_size(set_b));
 
    // Build subtrees as children for this node using the two
    // point subsets
-   antipole_a = NULL;
-   antipole_b = NULL;
+   level++;
+   printf(" |- checking a\n");
    check_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
+   printf(" |- a antipoles: %p %p\n", antipole_a, antipole_b);
+   new_tree->left = build_tree( level, set_a, target_radius, antipole_a, antipole_b, dimensionality, dist );
+   printf(" |- checking b\n");
    check_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
-   new_tree->left  = build_tree( set_a, target_radius, antipole_a, antipole_b, dist );
-   new_tree->right = build_tree( set_b, target_radius, antipole_a, antipole_b, dist );
+   printf(" |- b antipoles: %p %p\n", antipole_a, antipole_b);
+   new_tree->right = build_tree( level, set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
 
    return new_tree;
 }
@@ -80,7 +105,9 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
 // another to group together), the identity of the geometric
 // median of the cluster, and the cluster radius.
 ap_Cluster*
-make_cluster( ap_List *set, DIST_FUNC ) {
+make_cluster( ap_List *set, int dimensionality, DIST_FUNC ) {
+   printf(" |- BUILD CLUSTER\n");
+   printf("    |- size = %d\n", list_size(set));
 
    ap_List *index;
    double dist_centroid;
@@ -88,7 +115,7 @@ make_cluster( ap_List *set, DIST_FUNC ) {
    // Create the new ap_Cluster and initialize it
    ap_Cluster *new_cluster = malloc( sizeof( ap_Cluster ) );
    assert( new_cluster );
-   approx_1_median( set, &(new_cluster->centroid), dist );
+   approx_1_median( set, &(new_cluster->centroid), dimensionality, dist );
    //new_cluster->size = 0;
    new_cluster->radius = 0;
    new_cluster->members = NULL;
@@ -279,13 +306,13 @@ exact_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
 // of points and store it in median. The user should
 // initialize the random number generator using srand.
 void
-approx_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
+approx_1_median( ap_List *set, ap_Point **median, int dimensionality, DIST_FUNC ) {
 
    *median = NULL;
 
    ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
-   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
+   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
+   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
    // Hold a series of rounds of tournaments
    while( contestants_size > final_round_size ) {
@@ -357,14 +384,14 @@ exact_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIS
 // The user should initialize the random number generator
 // using srand.
 void
-approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
+approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
    ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
-   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
+   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
+   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
    // Hold a series of rounds of tournaments
    while( contestants_size > final_round_size ) {
@@ -416,13 +443,29 @@ adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipo
 }
 
 
-// ...
+// Search the set for a point that when paired with ancestor
+// could serve as an antipole pair.
 void
-check_for_antipoles( ap_List *set, double target_radius, ap_Point *antipole, ap_Point **antipole_a, ap_Point **antipole_b ) {
+check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
+   // Search the set for a point whose distance to the ancestor
+   // is greater than 2*target_radius and save it and the
+   // ancestor as antipoles
+   ap_List *index_i, *index_j;
+   for( index_i = set; index_i != NULL; index_i = index_i->next ) {
+      for( index_j = index_i->p->ancestors; index_j != NULL; index_j = index_j->next ) {
+         if( index_j->p == ancestor ) {
+            if( index_j->dist > 2 * target_radius ) {
+               *antipole_a = ancestor;
+               *antipole_b = index_i->p;
+               return;
+            }
+         }
+      }
+   }
 }
 
 

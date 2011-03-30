@@ -28,7 +28,7 @@ main() {
 
    // Create and initialize an array of ap_Points
    // with random vector data
-   int i, j, n = 20;
+   int i, j, n = 10000;
    ap_Point arr[n];
    int seed = time(NULL);
    srand(seed);
@@ -55,6 +55,7 @@ main() {
    }
    */
 
+   /*
    // Dump the vectors for Mathematica
    printf("data = {");
    for( i = 0; i < n; i++ ) {
@@ -63,6 +64,7 @@ main() {
          printf(",");
    }
    printf("};\n");
+   */
 
    /*
    // Print the distances between each ap_Point
@@ -76,6 +78,7 @@ main() {
    for( i = 0; i < n; i++ )
       add_point( &s, &arr[i], 0 );
 
+   /*
    // Find the 1-median
    ap_Point *median;
    exact_1_median( s, &median, dist );
@@ -89,6 +92,10 @@ main() {
    printf("exact antipoles   id=%d and id=%d\n", antipole_a->id, antipole_b->id);
    approx_antipoles( s, &antipole_a, &antipole_b, dist );
    printf("approx antipoles  id=%d and id=%d\n", antipole_a->id, antipole_b->id);
+   */
+
+   // ...
+   ap_Tree *tree = build_tree( 0, s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
 
 
    /*
