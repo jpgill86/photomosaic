@@ -39,7 +39,7 @@ void move_point( struct ap_Point *p, struct ap_List **from, struct ap_List **to 
 void move_nth_point( int n, struct ap_List **from, struct ap_List **to );
 struct ap_List* copy_list( struct ap_List *set );
 void free_list( struct ap_List *set );
-int set_size( struct ap_List *set );
+int list_size( struct ap_List *set );
 
 void exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC );
 void approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC );

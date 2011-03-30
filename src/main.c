@@ -105,7 +105,7 @@ main() {
    }
    printf("moving members of t into u\n", i);
    struct ap_List *u = NULL;
-   while( set_size(t) > 0 ) {
+   while( list_size(t) > 0 ) {
       move_list( 0, &t, &u );
    }
    printf("members of u:\n");
@@ -152,11 +152,11 @@ main() {
    */
 
    /*
-   // Test for mem leaks in set_size and move_list
+   // Test for mem leaks in list_size and move_list
    for( i = 0; i < 1e7; i++ ) {
-      while( set_size(s) > 0 )
+      while( list_size(s) > 0 )
          move_list( 0, &s, &t );
-      while( set_size(t) > 0 )
+      while( list_size(t) > 0 )
          move_list( 0, &t, &s );
    }
    */

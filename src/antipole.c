@@ -222,7 +222,7 @@ free_list( struct ap_List *set ) {
 
 // Find the size of a set of points
 int
-set_size( struct ap_List *set ) {
+list_size( struct ap_List *set ) {
 
    int size = 0;
    while( set != NULL ) {
@@ -238,7 +238,7 @@ set_size( struct ap_List *set ) {
 void
 exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
-   int i, j, d, size = set_size( set );
+   int i, j, d, size = list_size( set );
    struct ap_List *i_list, *j_list;
 
    // Initialize the array of distance sums
@@ -276,8 +276,8 @@ void
 approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
-   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
+   int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
+   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
    // Hold a series of rounds of tournaments
    while( contestants_size > final_round_size ) {
@@ -348,8 +348,8 @@ void
 approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
 
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
-   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
+   int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
+   int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
    // Hold a series of rounds of tournaments
    while( contestants_size > final_round_size ) {
