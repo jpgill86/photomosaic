@@ -31,7 +31,7 @@ struct ap_Tree {
    struct ap_Cluster *cluster;   /* if leaf, pointer to cluster */
 };
 
-struct ap_Tree* build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC );
+struct ap_Tree* build_tree( struct ap_List *set, double target_radius, struct ap_Point *ap1, struct ap_Point *ap2, DIST_FUNC );
 struct ap_Cluster* make_cluster( struct ap_List *set, DIST_FUNC );
 
 void add_point( struct ap_List **set, struct ap_Point *p, double dist );
@@ -46,8 +46,8 @@ void approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC )
 
 void exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC );
 void approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC );
-struct ap_List* adapted_approx_antipoles( struct ap_List *set, double target_radius );
-struct ap_List* check( struct ap_List *set, double target_radius, struct ap_Point *antipole );
+void adapted_approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, double target_radius, DIST_FUNC );
+void check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **ap1, struct ap_Point **ap2 );
 
 #endif /* ANTIPOLE_H */
 

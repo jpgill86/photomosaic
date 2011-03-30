@@ -14,16 +14,16 @@
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
 struct ap_Tree*
-build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles, DIST_FUNC ) {
+build_tree( struct ap_List *set, double target_radius, struct ap_Point *ap1, struct ap_Point *ap2, DIST_FUNC ) {
 
    // Create the new ap_Tree
    struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
    assert( new_tree );
-      
+
    // Determine if this tree is an internal node or a leaf
-   if( antipoles == NULL ) {
-      antipoles = adapted_approx_antipoles( set, target_radius );
-      if( antipoles == NULL ) {
+   if( ap1 == NULL || ap2 == NULL ) {
+      adapted_approx_antipoles( set, &ap1, &ap2, target_radius, dist );
+      if( ap1 == NULL || ap2 == NULL ) {
          // If it is a leaf, create a cluster from the set and return
          // the leaf
          new_tree->is_leaf = 1;
@@ -34,8 +34,8 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
 
    // If this tree is an internal node, initialize it
    new_tree->is_leaf = 0;
-   new_tree->a = antipoles->p;
-   new_tree->b = antipoles->next->p;
+   new_tree->a = ap1;
+   new_tree->b = ap2;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
 
@@ -63,8 +63,12 @@ build_tree( struct ap_List *set, double target_radius, struct ap_List *antipoles
 
    // Build subtrees as children for this node using the two
    // point subsets
-   new_tree->left  = build_tree( set_a, target_radius, check( set_a, target_radius, new_tree->a ), dist );
-   new_tree->right = build_tree( set_b, target_radius, check( set_b, target_radius, new_tree->b ), dist );
+   ap1 = NULL;
+   ap2 = NULL;
+   check_for_antipoles( set_a, target_radius, new_tree->a, &ap1, &ap2 );
+   check_for_antipoles( set_b, target_radius, new_tree->b, &ap1, &ap2 );
+   new_tree->left  = build_tree( set_a, target_radius, ap1, ap2, dist );
+   new_tree->right = build_tree( set_b, target_radius, ap1, ap2, dist );
 
    return new_tree;
 }
@@ -392,14 +396,14 @@ approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **
 
 
 // ...
-struct ap_List*
-adapted_approx_antipoles( struct ap_List *set, double target_radius ) {
+void
+adapted_approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, double target_radius, DIST_FUNC ) {
 }
 
 
 // ...
-struct ap_List*
-check( struct ap_List *set, double target_radius, struct ap_Point *antipole ) {
+void
+check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **ap1, struct ap_Point **ap2 ) {
 }
 
 
