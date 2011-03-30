@@ -84,11 +84,11 @@ main() {
    printf("approx 1-median   id=%d\n", median->id);
 
    // Find the antipole pair
-   struct ap_Point *ap1, *ap2;
-   exact_antipoles( s, &ap1, &ap2, dist );
-   printf("exact antipoles   id=%d and id=%d\n", ap1->id, ap2->id);
-   approx_antipoles( s, &ap1, &ap2, dist );
-   printf("approx antipoles  id=%d and id=%d\n", ap1->id, ap2->id);
+   struct ap_Point *antipole_a, *antipole_b;
+   exact_antipoles( s, &antipole_a, &antipole_b, dist );
+   printf("exact antipoles   id=%d and id=%d\n", antipole_a->id, antipole_b->id);
+   approx_antipoles( s, &antipole_a, &antipole_b, dist );
+   printf("approx antipoles  id=%d and id=%d\n", antipole_a->id, antipole_b->id);
 
 
    /*
@@ -132,13 +132,13 @@ main() {
    /*
    // Test for mem leaks in exact_antipoles
    for( i = 0; i < 1e7; i++ )
-      exact_antipoles( s, &ap1, &ap2, dist );
+      exact_antipoles( s, &antipole_a, &antipole_b, dist );
    */
 
    /*
    // Test for mem leaks in approx_antipoles
    for( i = 0; i < 1e7; i++ )
-      approx_antipoles( s, &ap1, &ap2, dist );
+      approx_antipoles( s, &antipole_a, &antipole_b, dist );
    */
 
    /*

@@ -14,16 +14,16 @@
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
 struct ap_Tree*
-build_tree( struct ap_List *set, double target_radius, struct ap_Point *ap1, struct ap_Point *ap2, DIST_FUNC ) {
+build_tree( struct ap_List *set, double target_radius, struct ap_Point *antipole_a, struct ap_Point *antipole_b, DIST_FUNC ) {
 
    // Create the new ap_Tree
    struct ap_Tree *new_tree = malloc( sizeof( struct ap_Tree ) );
    assert( new_tree );
 
    // Determine if this tree is an internal node or a leaf
-   if( ap1 == NULL || ap2 == NULL ) {
-      adapted_approx_antipoles( set, &ap1, &ap2, target_radius, dist );
-      if( ap1 == NULL || ap2 == NULL ) {
+   if( antipole_a == NULL || antipole_b == NULL ) {
+      adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
+      if( antipole_a == NULL || antipole_b == NULL ) {
          // If it is a leaf, create a cluster from the set and return
          // the leaf
          new_tree->is_leaf = 1;
@@ -34,8 +34,8 @@ build_tree( struct ap_List *set, double target_radius, struct ap_Point *ap1, str
 
    // If this tree is an internal node, initialize it
    new_tree->is_leaf = 0;
-   new_tree->a = ap1;
-   new_tree->b = ap2;
+   new_tree->a = antipole_a;
+   new_tree->b = antipole_b;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
 
@@ -63,12 +63,12 @@ build_tree( struct ap_List *set, double target_radius, struct ap_Point *ap1, str
 
    // Build subtrees as children for this node using the two
    // point subsets
-   ap1 = NULL;
-   ap2 = NULL;
-   check_for_antipoles( set_a, target_radius, new_tree->a, &ap1, &ap2 );
-   check_for_antipoles( set_b, target_radius, new_tree->b, &ap1, &ap2 );
-   new_tree->left  = build_tree( set_a, target_radius, ap1, ap2, dist );
-   new_tree->right = build_tree( set_b, target_radius, ap1, ap2, dist );
+   antipole_a = NULL;
+   antipole_b = NULL;
+   check_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
+   check_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
+   new_tree->left  = build_tree( set_a, target_radius, antipole_a, antipole_b, dist );
+   new_tree->right = build_tree( set_b, target_radius, antipole_a, antipole_b, dist );
 
    return new_tree;
 }
@@ -326,12 +326,12 @@ approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
 
 // Find the two points in the set that are furthest from one
-// another and store them in ap1 and ap2.
+// another and store them in antipole_a and antipole_b.
 void
-exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
+exact_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, DIST_FUNC ) {
 
-   *ap1 = NULL;
-   *ap2 = NULL;
+   *antipole_a = NULL;
+   *antipole_b = NULL;
 
    struct ap_List *i_list, *j_list;
    double d, max_dist = 0;
@@ -343,8 +343,8 @@ exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **a
       for( j_list = i_list->next; j_list != NULL; j_list = j_list->next ) {
          d = dist( i_list->p, j_list->p );
          if( d > max_dist ) {
-            *ap1 = i_list->p;
-            *ap2 = j_list->p;
+            *antipole_a = i_list->p;
+            *antipole_b = j_list->p;
             max_dist = d;
          }
       }
@@ -353,13 +353,14 @@ exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **a
 
 
 // Find an approximation for the antipole pair of a set
-// of points and store them in ap1 and ap2. The user should
-// initialize the random number generator using srand.
+// of points and store them in antipole_a and antipole_b.
+// The user should initialize the random number generator
+// using srand.
 void
-approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC ) {
+approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, DIST_FUNC ) {
 
-   *ap1 = NULL;
-   *ap2 = NULL;
+   *antipole_a = NULL;
+   *antipole_b = NULL;
 
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = 3, winners_size;
@@ -379,17 +380,17 @@ approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **
             contestants_size--;
          }
          // Find the winners of this tournament and discard the losers
-         exact_antipoles( tournament, ap1, ap2, dist );
-         move_point( *ap1, &tournament, &winners );
-         move_point( *ap2, &tournament, &winners );
+         exact_antipoles( tournament, antipole_a, antipole_b, dist );
+         move_point( *antipole_a, &tournament, &winners );
+         move_point( *antipole_b, &tournament, &winners );
          winners_size += 2;
          free_list( tournament );
       }
       // Find the winners among the remaining contestants and
       // discard the losers
-      exact_antipoles( contestants, ap1, ap2, dist );
-      move_point( *ap1, &contestants, &winners );
-      move_point( *ap2, &contestants, &winners );
+      exact_antipoles( contestants, antipole_a, antipole_b, dist );
+      move_point( *antipole_a, &contestants, &winners );
+      move_point( *antipole_b, &contestants, &winners );
       winners_size += 2;
       free_list( contestants );
 
@@ -400,27 +401,27 @@ approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **
    }
    
    // Find the overall winners and discard the losers
-   exact_antipoles( contestants, ap1, ap2, dist );
+   exact_antipoles( contestants, antipole_a, antipole_b, dist );
    free_list( contestants );
 }
 
 
 // ...
 void
-adapted_approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, double target_radius, DIST_FUNC ) {
+adapted_approx_antipoles( struct ap_List *set, struct ap_Point **antipole_a, struct ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
 
-   *ap1 = NULL;
-   *ap2 = NULL;
+   *antipole_a = NULL;
+   *antipole_b = NULL;
 
 }
 
 
 // ...
 void
-check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **ap1, struct ap_Point **ap2 ) {
+check_for_antipoles( struct ap_List *set, double target_radius, struct ap_Point *antipole, struct ap_Point **antipole_a, struct ap_Point **antipole_b ) {
 
-   *ap1 = NULL;
-   *ap2 = NULL;
+   *antipole_a = NULL;
+   *antipole_b = NULL;
 
 }
 
