@@ -84,7 +84,7 @@ make_cluster( struct ap_List *set, DIST_FUNC ) {
    // Create the new ap_Cluster and initialize it
    struct ap_Cluster *new_cluster = malloc( sizeof( struct ap_Cluster ) );
    assert( new_cluster );
-   new_cluster->centroid = approx_1_median( set, dist );
+   approx_1_median( set, &(new_cluster->centroid), dist );
    //new_cluster->size = 0;
    new_cluster->radius = 0;
    new_cluster->members = NULL;
@@ -233,9 +233,10 @@ set_size( struct ap_List *set ) {
 }
 
 
-// Find the exact geometric median of a set of points
-struct ap_Point*
-exact_1_median( struct ap_List *set, DIST_FUNC ) {
+// Find the exact geometric median of a set of points and
+// store it in median
+void
+exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
    int i, j, d, size = set_size( set );
    struct ap_List *i_list, *j_list;
@@ -249,34 +250,31 @@ exact_1_median( struct ap_List *set, DIST_FUNC ) {
    // add each distance to the distance sums for each point in
    // the pair
    for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
-      for( j = i + 1, j_list = i_list->next; j_list != NULL; j++, j_list = j_list->next ) {
+      for( j = i + 1, j_list = i_list->next; j < size; j++, j_list = j_list->next ) {
          d = dist( i_list->p, j_list->p );
          sums[ i ] += d;
          sums[ j ] += d;
       }
    }
 
-   // Identify the point with the minimum distance sum
+   // Identify the point with the minimum distance sum and
+   // store it in median
    double min_sum = -1;
-   struct ap_Point *median = NULL;
    for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
       if( sums[ i ] < min_sum || min_sum < 0 ) {
          min_sum = sums[ i ];
-         median = i_list->p;
+         *median = i_list->p;
       }
    }
-
-   return median;
 }
 
 
 // Find an approximation for the geometric median of a set
-// of points. The user should initialize the random number
-// generator using srand.
-struct ap_Point*
-approx_1_median( struct ap_List *set, DIST_FUNC ) {
+// of points and store it in median. The user should
+// initialize the random number generator using srand.
+void
+approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC ) {
 
-   struct ap_Point *median;
    struct ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = set_size( contestants ), tournament_size = 3, winners_size;
    int final_round_size = min( pow( tournament_size, 2 ) - 1, round( sqrt( set_size( set ) ) ) );
@@ -295,15 +293,15 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
             contestants_size--;
          }
          // Find the winner of this tournament and discard the losers
-         median = exact_1_median( tournament, dist );
-         move_point( median, &tournament, &winners );
+         exact_1_median( tournament, median, dist );
+         move_point( *median, &tournament, &winners );
          winners_size++;
          free_list( tournament );
       }
       // Find the winner among the remaining contestants and
       // discard the losers
-      median = exact_1_median( contestants, dist );
-      move_point( median, &contestants, &winners );
+      exact_1_median( contestants, median, dist );
+      move_point( *median, &contestants, &winners );
       winners_size++;
       free_list( contestants );
 
@@ -314,10 +312,8 @@ approx_1_median( struct ap_List *set, DIST_FUNC ) {
    }
    
    // Find the overall winner and discard the losers
-   median = exact_1_median( contestants, dist );
+   exact_1_median( contestants, median, dist );
    free_list( contestants );
-
-   return median;
 }
 
 

@@ -41,8 +41,8 @@ struct ap_List* copy_list( struct ap_List *set );
 void free_list( struct ap_List *set );
 int set_size( struct ap_List *set );
 
-struct ap_Point* exact_1_median( struct ap_List *set, DIST_FUNC );
-struct ap_Point* approx_1_median( struct ap_List *set, DIST_FUNC );
+void exact_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC );
+void approx_1_median( struct ap_List *set, struct ap_Point **median, DIST_FUNC );
 
 void exact_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC );
 void approx_antipoles( struct ap_List *set, struct ap_Point **ap1, struct ap_Point **ap2, DIST_FUNC );

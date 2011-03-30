@@ -71,13 +71,17 @@ main() {
             printf("dist(arr[%d], arr[%d]) = %f\n", i, j, dist(&arr[i], &arr[j]));
    */
 
-   // Place the ap_Points in an ap_List and find
-   // the 1-median
+   // Place the ap_Points in an ap_List
    struct ap_List *s = NULL;
    for( i = 0; i < n; i++ )
       add_point( &s, &arr[i], 0 );
-   printf("exact 1-median    id=%d\n", exact_1_median( s, dist )->id);
-   printf("approx 1-median   id=%d\n", approx_1_median( s, dist )->id);
+
+   // Find the 1-median
+   struct ap_Point *median;
+   exact_1_median( s, &median, dist );
+   printf("exact 1-median    id=%d\n", median->id);
+   approx_1_median( s, &median, dist );
+   printf("approx 1-median   id=%d\n", median->id);
 
    // Find the antipole pair
    struct ap_Point *ap1, *ap2;
@@ -116,13 +120,13 @@ main() {
    /*
    // Test for mem leaks in exact_1_median
    for( i = 0; i< 1e7; i++ )
-      exact_1_median( s, dist );
+      exact_1_median( s, &median, dist );
    */
 
    /*
    // Test for mem leaks in approx_1_median
    for( i = 0; i < 1e7; i++ )
-      approx_1_median( s, dist );
+      approx_1_median( s, &median, dist );
    */
 
    /*
