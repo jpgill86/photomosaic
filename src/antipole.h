@@ -54,5 +54,8 @@ void approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_
 void adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC );
 void check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b );
 
+void range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_FUNC );
+void range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List **out, DIST_FUNC );
+
 #endif /* ANTIPOLE_H */
 

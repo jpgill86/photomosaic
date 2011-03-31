@@ -28,9 +28,10 @@ main() {
 
    // Create and initialize an array of ap_Points
    // with random vector data
-   int i, j, n = 10000;
+   int i, j, n = 20;
    ap_Point arr[n];
    int seed = time(NULL);
+   //seed = 1301506514;
    srand(seed);
    printf("DIM = %d\n", DIM);
    printf("n = %d\n", n);
@@ -39,9 +40,8 @@ main() {
       arr[i].id = i;
       arr[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
       arr[i].ancestors = NULL;
-      for( j = 0; j < DIM; j++ ) {
+      for( j = 0; j < DIM; j++ )
          ((VEC_TYPE*)arr[i].vec)[j] = rand() % 256;
-      }
    }
 
    /*
@@ -94,8 +94,27 @@ main() {
    printf("approx antipoles  id=%d and id=%d\n", antipole_a->id, antipole_b->id);
    */
 
-   // ...
+   // Construct a tree and search it
+   printf("build tree\n");
    ap_Tree *tree = build_tree( 0, s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+   printf("range search\n");
+   ap_List *range = NULL;
+   ap_Point query_p;
+   ap_Point *query = &query_p;
+   query->id = -1;
+   query->vec = calloc( DIM, sizeof( VEC_TYPE ) );
+   query->ancestors = NULL;
+   for( i = 0; i < DIM; i++ )
+      ((VEC_TYPE*)query->vec)[i] = rand() % 256;
+   //printf("query = (%d,%d)\n", ((VEC_TYPE*)query->vec)[0], ((VEC_TYPE*)query->vec)[1]);
+   range_search( tree, query, 50, &range, dist );
+   ap_List *index = range;
+   printf("query results\n");
+   printf("size=%d\n", list_size(range));
+   while( index != NULL ) {
+      printf("match has id=%d\n", index->p->id);
+      index = index->next;
+   }
 
 
    /*
