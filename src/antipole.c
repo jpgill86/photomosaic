@@ -28,18 +28,7 @@ build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a,
 
    // Determine if this tree is an internal node or a leaf
    if( antipole_a == NULL || antipole_b == NULL ) {
-      //adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
-      printf(" |- no antipoles found by check\n");
-      approx_antipoles( set, &antipole_a, &antipole_b, dimensionality, dist );
-      if( antipole_a != NULL || antipole_b != NULL ) {
-         if( dist( antipole_a, antipole_b ) <= 2*target_radius ) {
-            printf(" |- dist too small\n");
-            antipole_a = NULL;
-            antipole_b = NULL;
-         } else {
-            printf(" |- dist big enough\n");
-         }
-      }
+      adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
       if( antipole_a == NULL || antipole_b == NULL ) {
          printf(" |- splitting condition not satisfied\n");
          // If it is a leaf, create a cluster from the set and return
@@ -86,13 +75,11 @@ build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a,
    // Build subtrees as children for this node using the two
    // point subsets
    level++;
-   printf(" |- checking a\n");
    check_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
-   printf(" |- a antipoles: %p %p\n", antipole_a, antipole_b);
+   printf(" |- building child a\n");
    new_tree->left = build_tree( level, set_a, target_radius, antipole_a, antipole_b, dimensionality, dist );
-   printf(" |- checking b\n");
    check_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
-   printf(" |- b antipoles: %p %p\n", antipole_a, antipole_b);
+   printf(" |- building child b\n");
    new_tree->right = build_tree( level, set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
 
    return new_tree;
@@ -433,13 +420,30 @@ approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, in
 }
 
 
-// ...
+// Search for any two points whose distance from
+// one another is greater than the target cluster
+// diameter
 void
 adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
+   ap_List *i_list, *j_list;
+
+   // Calculate the distance between each pair of points and
+   // if a distance is greater than the target cluster diameter
+   // make the pair of points the new antipole pair and stop
+   // searching
+   for( i_list = set; i_list != NULL; i_list = i_list->next ) {
+      for( j_list = i_list->next; j_list != NULL; j_list = j_list->next ) {
+         if( dist( i_list->p, j_list->p ) > 2 * target_radius ) {
+            *antipole_a = i_list->p;
+            *antipole_b = j_list->p;
+            return;
+         }
+      }
+   }
 }
 
 
