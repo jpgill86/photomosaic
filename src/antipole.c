@@ -361,7 +361,7 @@ exact_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIS
    *antipole_b = NULL;
 
    ap_List *i_list, *j_list;
-   double d, max_dist = 0;
+   double d, max_dist = -1;
 
    // Calculate the distance between each pair of points and
    // if a distance is greater than any found yet, make the
