@@ -1,30 +1,113 @@
-# MAKEFILE
+##############################################################
+# photomosaic makefile                                       #
+# ========================================================== #
+# Available targets:                                         #
+#    photomosaic                                             #
+#    photomosaic-debug                                       #
+#    all                                                     #
+#    clean                                                   #
+##############################################################
 
-CC = gcc
-CFLAGS = -I.
-LIBS = -lm
+# List of executables that can be built
+APPS = photomosaic \
+		 photomosaic-debug
 
-TARGET = photomosaic
+
+# When a target is not specified, the default executable is
+# built
+default: photomosaic
+
+
+# Specifying the 'all' target will build every executable
+all: $(APPS)
+
+
+# Name of the main build directory
 BUILD = build
 
-SOURCES = main.c antipole.c
-_OBJ = main.o antipole.o
-OBJ = $(patsubst %,$(BUILD)/%,$(_OBJ))
 
-$(TARGET): $(OBJ)
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
-
-$(BUILD)/%.o: %.c
-	mkdir -p $(BUILD)
-	$(CC) -c -o $@ $< $(CFLAGS)
-
+# Target for removing all files and directories created by
+# 'make'
 .PHONY: clean
 clean:
-	rm -rf $(TARGET) $(BUILD)/ *.o *~
+	rm -rf $(APPS) $(BUILD)/ *.out *~
 
 
-$(BUILD)/main.o: antipole.h
-$(BUILD)/antipole.o: antipole.h
+
+ifndef OBJDIR
+##############################################################
+# FIRST PASS:                                                #
+# When 'make' is run from the command line, OBJDIR should    #
+# not be defined, and the makefile will determine where      #
+# object files should be placed before running 'make' again  #
+# with OBJDIR defined                                        #
+##############################################################
+
+# Set OBJDIR to a unique path for the executable that is
+# being compiled, create the build directory if necessary,
+# and run 'make' again with OBJDIR defined
+$(APPS): OBJDIR=$(BUILD)/$@
+$(APPS): FORCE
+	-mkdir -p $(OBJDIR)
+	make $@ OBJDIR=$(OBJDIR)
+
+FORCE:
+
+
+
+else
+##############################################################
+# SECOND PASS:                                               #
+# OBJDIR will be defined when 'make' is called a second time #
+# (from the makefile during the first pass) and compilation  #
+# can begin                                                  #
+##############################################################
+
+# List source code files used
+HEADERS = antipole.h
+SOURCES = antipole.c \
+			 main.c
+
+
+# Create a list of object files that will be built and
+# linked together to construct an execuatable
+OBJECTS = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(basename $(notdir $(SOURCES)))))
+
+
+# Define various compilation flags used by all targets
+DEFINES = 
+FLAGS   = -pipe -Wall -W
+LFLAGS  =
+LIBS    = -lm
+INCPATH = .
+
+
+# Define target-specific compilation flags
+photomosaic-debug: DEFINES+=DEBUG _GLIBCXX_DEBUG
+photomosaic-debug: FLAGS+=-O0 -g -pg
+photomosaic-debug: LFLAGS+=-Wl,-O0 -g -pg
+
+
+# Specify the dependencies and build rules for the
+# executables
+photomosaic photomosaic-debug: $(OBJECTS)
+	gcc $(LFLAGS) $(LIBS) -o $@ $^
+
+
+# Define the generic rule for building .o object files from
+# .c source files
+$(OBJDIR)/%.o: %.c
+	gcc -c $(FLAGS) $(addprefix -D, $(DEFINES)) $(addprefix -I, $(INCPATH)) -o $@ $<
+
+
+# Specify dependencies for all object files
+$(OBJDIR)/antipole.o: antipole.c \
+	antipole.h
+
+$(OBJDIR)/main.o: main.c \
+	antipole.h
+
+endif
 
 # End
 

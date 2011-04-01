@@ -318,7 +318,7 @@ approx_1_median( ap_List *set, ap_Point **median, int dimensionality, DIST_FUNC 
 
    *median = NULL;
 
-   ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   ap_List *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
    int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
@@ -397,7 +397,7 @@ approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, in
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   ap_List *index, *contestants = copy_list( set ), *tournament, *winners;
+   ap_List *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
    int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 

@@ -1,5 +1,6 @@
-photomosaic
+photomosaic*
 build/
+*.out
 *~
 *.swp
 

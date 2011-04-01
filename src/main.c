@@ -2,7 +2,8 @@
 #include <math.h>       /* sqrt, pow */
 #include <stdint.h>     /* uint8_t */
 #include <stdio.h>      /* printf */
-#include <stdlib.h>     /* rand, time */
+#include <stdlib.h>     /* rand */
+#include <time.h>       /* time */
 #include "antipole.h"
 
 const int DIM = 2;         /* dimensionality of the mean RGB data */
