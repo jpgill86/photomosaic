@@ -1,0 +1,37 @@
+============================================================
+                        PHOTOMOSAIC
+============================================================
+
+An open-source photomosaic renderer.
+
+This project is available at:
+http://github.com/jpg18/photomosaic/
+
+Contact: jeffrey.p.gill@gmail.com
+
+Copyright (c) 2011, Jeffrey P. Gill
+
+
+Antipole Tree Data Structure and Search Algorithms
+============================================================
+This software contains an implementation of the antipole
+tree data structure and search algorithms presented in:
+
+D. Cantone, A. Ferro, A. Pulvirenti, D. R. Recupero, and
+D. Shasha. Antipole tree indexing to support range search
+and k-nearest neighbor search in metric spaces. IEEE
+Transactions on Knowledge and Data Engineering, 17(4):535-
+550, 2005.
+
+
+Photomosaic Construction Algorithm
+============================================================
+This software is based on an algorithm for building
+photomosaics presented in:
+
+G. di Blasi, G. Gallo, and M. P. Petralia. Smart ideas for
+photomosaic rendering. In Proceedings of Eurographics
+Italian Chapter Conference, pp. 267-272, 2006.
+
+============================================================
+
