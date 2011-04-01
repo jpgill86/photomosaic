@@ -24,97 +24,126 @@ dist( ap_Point *p1, ap_Point *p2 ) {
 int
 main() {
 
-   printf(" ----- PHOTOMOSAIC ----- \n");
+   printf("(* ----- PHOTOMOSAIC ----- *)\n");
 
    // Create and initialize an array of ap_Points
    // with random vector data
    int i, j, n = 20;
-   ap_Point arr[n];
+   ap_Point data[n];
    int seed = time(NULL);
-   //seed = 1301506514;
    srand(seed);
-   printf("DIM = %d\n", DIM);
-   printf("n = %d\n", n);
-   printf("seed = %d\n", seed);
+   printf("dim = %d;\n", DIM);
+   printf("n = %d;\n", n);
+   printf("seed = %d;\n", seed);
    for( i = 0; i < n; i++ ) {
-      arr[i].id = i;
-      arr[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
-      arr[i].ancestors = NULL;
+      data[i].id = i + 1;
+      data[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
+      data[i].ancestors = NULL;
       for( j = 0; j < DIM; j++ )
-         ((VEC_TYPE*)arr[i].vec)[j] = rand() % 256;
+         ((VEC_TYPE*)data[i].vec)[j] = rand() % 256;
    }
 
-   /*
-   // Print the vector for each ap_Point
-   for( i = 0; i < n; i++ ) {
-      printf("arr[%d].vec = { ", i);
-      for( j = 0; j < DIM; j++ ) {
-         printf("%d ", ((VEC_TYPE*)arr[i].vec)[j]);
-      }
-      printf("}\n");
-   }
-   */
-
-   /*
-   // Dump the vectors for Mathematica
+#ifdef DEBUG
+   // Dump the data vectors for Mathematica
    printf("data = {");
    for( i = 0; i < n; i++ ) {
-      printf("{%d,%d}", ((VEC_TYPE*)arr[i].vec)[0], ((VEC_TYPE*)arr[i].vec)[1]);
+      printf("{");
+      for( j = 0; j < DIM; j++ ) {
+         printf("%d", ((VEC_TYPE*)data[i].vec)[j]);
+         if( j < DIM-1 )
+            printf(",");
+      }
       if( i < n-1 )
-         printf(",");
+         printf("},");
+      else
+         printf("}");
    }
    printf("};\n");
-   */
-
-   /*
-   // Print the distances between each ap_Point
-   for( i = 0; i < n; i++ )
-      for( j = i+1; j < n; j++ )
-            printf("dist(arr[%d], arr[%d]) = %f\n", i, j, dist(&arr[i], &arr[j]));
-   */
+#endif
 
    // Place the ap_Points in an ap_List
    ap_List *s = NULL;
    for( i = 0; i < n; i++ )
-      add_point( &s, &arr[i], 0 );
+      add_point( &s, &data[i], 0 );
 
    /*
    // Find the 1-median
    ap_Point *median;
    exact_1_median( s, &median, dist );
-   printf("exact 1-median    id=%d\n", median->id);
-   approx_1_median( s, &median, dist );
-   printf("approx 1-median   id=%d\n", median->id);
+   printf("exactMedian = %d;\n", median->id);
+   approx_1_median( s, &median, DIM, dist );
+   printf("approxMedian = %d;\n", median->id);
 
    // Find the antipole pair
    ap_Point *antipole_a, *antipole_b;
    exact_antipoles( s, &antipole_a, &antipole_b, dist );
-   printf("exact antipoles   id=%d and id=%d\n", antipole_a->id, antipole_b->id);
-   approx_antipoles( s, &antipole_a, &antipole_b, dist );
-   printf("approx antipoles  id=%d and id=%d\n", antipole_a->id, antipole_b->id);
+   printf("exactAntipoles = {%d,%d};\n", antipole_a->id, antipole_b->id);
+   approx_antipoles( s, &antipole_a, &antipole_b, DIM, dist );
+   printf("approxAntipoles = {%d,%d};\n", antipole_a->id, antipole_b->id);
    */
 
-   // Construct a tree and search it
-   printf("build tree\n");
-   ap_Tree *tree = build_tree( 0, s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
-   printf("range search\n");
-   ap_List *range = NULL;
-   ap_Point query_p;
-   ap_Point *query = &query_p;
-   query->id = -1;
-   query->vec = calloc( DIM, sizeof( VEC_TYPE ) );
-   query->ancestors = NULL;
-   for( i = 0; i < DIM; i++ )
-      ((VEC_TYPE*)query->vec)[i] = rand() % 256;
-   //printf("query = (%d,%d)\n", ((VEC_TYPE*)query->vec)[0], ((VEC_TYPE*)query->vec)[1]);
-   range_search( tree, query, 50, &range, dist );
-   ap_List *index = range;
-   printf("query results\n");
-   printf("size=%d\n", list_size(range));
-   while( index != NULL ) {
-      printf("match has id=%d\n", index->p->id);
-      index = index->next;
+   // Construct a tree
+   printf("(* build tree *)\n");
+   ap_Tree *tree = build_tree( s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+
+   // Construct a set of query points
+   int n_query = 5;
+   ap_Point query[n_query];
+   for( i = 0; i < n_query; i++ ) {
+      query[i].id = i + 1;
+      query[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
+      query[i].ancestors = NULL;
+      for( j = 0; j < DIM; j++ )
+         ((VEC_TYPE*)query[i].vec)[j] = rand() % 256;
    }
+
+#ifdef DEBUG
+   // Dump the query vectors for Mathematica
+   printf("query = {");
+   for( i = 0; i < n_query; i++ ) {
+      printf("{");
+      for( j = 0; j < DIM; j++ ) {
+         printf("%d", ((VEC_TYPE*)query[i].vec)[j]);
+         if( j < DIM-1 )
+            printf(",");
+      }
+      if( i < n_query-1 )
+         printf("},");
+      else
+         printf("}");
+   }
+   printf("};\n");
+#endif
+
+   // Perform a range search on the query
+   printf("(* range search *)\n");
+   double range = 40;
+   printf("range = %f;\n", range);
+   ap_List *results[n_query];
+   for( i = 0; i < n_query; i++ ) {
+      results[i] = NULL;
+      range_search( tree, &query[i], range, &results[i], dist );
+   }
+
+#ifdef DEBUG
+   // Dump the search results for Mathematica
+   printf("(* query results *)\n");
+   ap_List *index;
+   printf("results = {");
+   for( i = 0; i < n_query; i++ ) {
+      printf("{");
+      for( index = results[i]; index != NULL; index = index->next ) {
+         printf("%d", index->p->id);
+         if( index->next != NULL )
+            printf(",");
+      }
+      if( i < n_query-1 )
+         printf("},");
+      else
+         printf("}");
+   }
+   printf("};\n");
+#endif
 
 
    /*
@@ -126,7 +155,7 @@ main() {
    printf("members of t:\n");
    i0 = t;
    while( i0 != NULL ) {
-      printf("i0 = %p\n", i0);
+      printf("(* i0 = %p *)\n", i0);
       i0 = i0->next;
    }
    printf("moving members of t into u\n", i);
@@ -137,7 +166,7 @@ main() {
    printf("members of u:\n");
    i0 = u;
    while( i0 != NULL ) {
-      printf("i0 = %p\n", i0);
+      printf("(* i0 = %p *)\n", i0);
       i0 = i0->next;
    }
    */
@@ -173,7 +202,7 @@ main() {
       free_list(s);
       s = NULL;
       for( j = 0; j < n; j++ )
-         add_point( &s, &arr[j], 0 );
+         add_point( &s, &data[j], 0 );
    }
    */
 
@@ -186,8 +215,6 @@ main() {
          move_list( 0, &t, &s );
    }
    */
-
-   printf(" ----------------------- \n");
 
    return 0;
 }

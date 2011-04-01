@@ -1,11 +1,8 @@
 #include <assert.h>  /* assert */
 #include <math.h>    /* fmax */
+#include <stdio.h>   /* printf */
 #include <stdlib.h>  /* NULL, rand */
 #include "antipole.h"
-
-
-
-#include <stdio.h>
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
@@ -18,9 +15,14 @@
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
 ap_Tree*
-build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC ) {
-   //printf("BUILD TREE --- %d\n", level);
-   //printf(" |- size = %d\n", list_size(set));
+build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC ) {
+
+#ifdef DEBUG
+   static int depth = -1;
+   depth++;
+   if( depth == 0 )
+      printf("tree = {{");
+#endif
 
    // Create the new ap_Tree
    ap_Tree *new_tree = malloc( sizeof( ap_Tree ) );
@@ -30,23 +32,23 @@ build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a,
    if( antipole_a == NULL || antipole_b == NULL ) {
       adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
       if( antipole_a == NULL || antipole_b == NULL ) {
-         //printf(" |- splitting condition not satisfied\n");
          // If it is a leaf, create a cluster from the set and return
          // the leaf
          new_tree->is_leaf = 1;
          new_tree->cluster = make_cluster( set, dimensionality, dist );
+#ifdef DEBUG
+         depth--;
+#endif
          return new_tree;
       }
    }
 
-   //printf(" |- splitting condition satisfied: d = %f\n", dist(antipole_a,antipole_b));
    // If this tree is an internal node, initialize it
    new_tree->is_leaf = 0;
    new_tree->a = antipole_a;
    new_tree->b = antipole_b;
    new_tree->radius_a = 0;
    new_tree->radius_b = 0;
-   //printf(" |- antipoles have id=%d and id=%d\n", antipole_a->id, antipole_b->id);
 
    // For each point in the set, find the distance to each
    // antipole, store the distances in the point's ancestor
@@ -69,18 +71,27 @@ build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a,
       }
    }
    free( set );
-   //printf(" |- a_set has %d\n", list_size(set_a));
-   //printf(" |- b_set has %d\n", list_size(set_b));
+
+#ifdef DEBUG
+   int size_a = list_size(set_a);
+   int size_b = list_size(set_b);
+#endif
 
    // Build subtrees as children for this node using the two
    // point subsets
-   level++;
    check_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
-   //printf(" |- building child a\n");
-   new_tree->left = build_tree( level, set_a, target_radius, antipole_a, antipole_b, dimensionality, dist );
+   new_tree->left = build_tree( set_a, target_radius, antipole_a, antipole_b, dimensionality, dist );
    check_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
-   //printf(" |- building child b\n");
-   new_tree->right = build_tree( level, set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
+   new_tree->right = build_tree( set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
+
+#ifdef DEBUG
+   printf("{%ld->%ld,\"id%d,s%d\"},", (long)new_tree, (long)new_tree->left, new_tree->a->id, size_a);
+   if( depth == 0 )
+      printf("{%ld->%ld,\"id%d,s%d\"}},%ld};\n", (long)new_tree, (long)new_tree->right, new_tree->b->id, size_b, (long)new_tree);
+   else
+      printf("{%ld->%ld,\"id%d,s%d\"},", (long)new_tree, (long)new_tree->right, new_tree->b->id, size_b);
+   depth--;
+#endif
 
    return new_tree;
 }
@@ -93,8 +104,6 @@ build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a,
 // median of the cluster, and the cluster radius.
 ap_Cluster*
 make_cluster( ap_List *set, int dimensionality, DIST_FUNC ) {
-   //printf(" |- BUILD CLUSTER\n");
-   //printf("    |- size = %d\n", list_size(set));
 
    ap_List *index;
    double dist_centroid;
@@ -489,7 +498,6 @@ check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_
 // of query and place them in out.
 void
 range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_FUNC ) {
-   //printf("ENTERING TREE\n");
 
    if( !tree->is_leaf ) {
       // Calculate the distance between query and the antipoles
@@ -532,37 +540,25 @@ range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_
 // query and add them to the list out.
 void
 range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List **out, DIST_FUNC ) {
-   //printf("VISIT CLUSTER: %p\n", cluster);
 
    // Calculate the distance between the query and the centroid
    // and add it to out if it is within range
    double d, dist_centroid = dist( cluster->centroid, query );
-   if( dist_centroid <= range ) {
-      //printf(" |- centroid id=%d within range (%f)\n", cluster->centroid->id, dist_centroid);
+   if( dist_centroid <= range )
       add_point( out, cluster->centroid, dist_centroid );
-   } else {
-      //printf(" |- centroid out of range (%f)\n", dist_centroid);
-   }
-
-   //printf(" |- list_size members = %d\n", list_size(cluster->members));
-   //printf(" |- cluster radius = %f\n", cluster->radius);
 
    // Use the triangle inequality with the cluster radius to
    // determine if the entire cluster can be excluded as a
    // group
-   if( dist_centroid >= range + cluster->radius ) {
-      //printf(" |- ALL EXCLUDED\n");
+   if( dist_centroid > range + cluster->radius )
       return;
-   }
 
    // Use the triangle inequality with the cluster radius to
    // determine if the entire cluster can be included as a
    // group
    if( dist_centroid <= range - cluster->radius ) {
-      //printf(" |- ALL INCLUDED\n");
       ap_List *index = cluster->members;
       while( index != NULL ) {
-         //printf(" |- id=%d\n", index->p->id);
          add_point( out, index->p, -1 );
          index = index->next;
       }
@@ -572,44 +568,40 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
    // Check each member of the cluster
    ap_List *index = cluster->members;
    ap_List *query_ancestors, *cluster_ancestors;
-   //printf(" |- MEMBERS\n");
    while( index != NULL ) {
-      //printf("    |- index = %p\n", index);
       // Use the triangle inequality with the cluster member's
       // distance to centroid to determine if the point is
       // definitely out of range
-      if( dist_centroid >= range + index->dist )
+      if( dist_centroid > range + index->dist )
          goto next_cluster_member;
 
       // Use the triangle inequality with the cluster member's
       // distance to centroid to determine if the point is
       // definitely within range
       if( dist_centroid <= range - index->dist ) {
-         //printf("    |- tri_c id=%d\n", index->p->id);
          add_point( out, index->p, -1 );
          goto next_cluster_member;
       }
 
       // Check the ancestors of the query and the member of the
       // cluster
-      //printf("    |- MEMBER ANCESTORS\n");
       for( query_ancestors = query->ancestors; query_ancestors != NULL; query_ancestors = query_ancestors->next ) {
          for( cluster_ancestors = index->p->ancestors; cluster_ancestors != NULL; cluster_ancestors = cluster_ancestors->next ) {
-            //printf("       |- q_a id=%d  c_a id=%d\n", query_ancestors->p->id, cluster_ancestors->p->id);
+            if( query_ancestors->p == cluster_ancestors->p ) {
 
-            // Use the triangle inequality with the cluster member's
-            // distance to ancestor to determine if the point is
-            // definitely out of range
-            if( query_ancestors->dist >= range + cluster_ancestors->dist )
-               goto next_cluster_member;
+               // Use the triangle inequality with the cluster member's
+               // distance to ancestor to determine if the point is
+               // definitely out of range
+               if( query_ancestors->dist > range + cluster_ancestors->dist )
+                  goto next_cluster_member;
 
-            // Use the triangle inequality with the cluster member's
-            // distance to ancestor to determine if the point is
-            // definitely within range
-            if( query_ancestors->dist <= range - cluster_ancestors->dist ) {
-               //printf("    |- tri_anc id=%d\n", index->p->id);
-               add_point( out, index->p, -1 );
-               goto next_cluster_member;
+               // Use the triangle inequality with the cluster member's
+               // distance to ancestor to determine if the point is
+               // definitely within range
+               if( query_ancestors->dist <= range - cluster_ancestors->dist ) {
+                  add_point( out, index->p, -1 );
+                  goto next_cluster_member;
+               }
             }
          }
       }
@@ -620,7 +612,6 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
       // member and add it to out if it is within range
       d = dist( index->p, query );
       if( d <= range ) {
-         //printf("    |- calc id=%d\n", index->p->id);
          add_point( out, index->p, d );
          goto next_cluster_member;
       }
@@ -628,8 +619,6 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
 next_cluster_member:
       index = index->next;
    }
-
-   //printf(" |- EXIT CLUSTER\n");
 }
 
 

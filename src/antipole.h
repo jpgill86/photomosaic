@@ -36,7 +36,7 @@ struct ap_Tree {
    ap_Cluster *cluster;       /* if leaf, pointer to cluster */
 };
 
-ap_Tree* build_tree( int level, ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
+ap_Tree* build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
 ap_Cluster* make_cluster( ap_List *set, int dimensionality, DIST_FUNC );
 
 void add_point( ap_List **set, ap_Point *p, double dist );
