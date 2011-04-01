@@ -1,0 +1,134 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[      4686,        125]
+NotebookOptionsPosition[      4403,        111]
+NotebookOutlinePosition[      4740,        126]
+CellTagsIndexPosition[      4697,        123]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"<<", "\"\<~/Desktop/out\>\""}]], "Input"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"p1", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{"data", ",", " ", 
+     RowBox[{"PlotStyle", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"PointSize", "[", "0.02", "]"}], ",", "Blue"}], "}"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p2", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"data", "[", 
+       RowBox[{"[", "exactMedian", "]"}], "]"}], "}"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"PointSize", "[", "0.02", "]"}], ",", "Red"}], "}"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p3", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"data", "[", 
+       RowBox[{"[", "approxMedian", "]"}], "]"}], "}"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"PointSize", "[", "0.02", "]"}], ",", "Green"}], "}"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p4", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{
+     RowBox[{"data", "[", 
+      RowBox[{"[", "exactAntipoles", "]"}], "]"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"PointSize", "[", "0.02", "]"}], ",", "Orange"}], "}"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p5", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{
+     RowBox[{"data", "[", 
+      RowBox[{"[", "approxAntipoles", "]"}], "]"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"PointSize", "[", "0.02", "]"}], ",", "Yellow"}], "}"}]}]}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Show", "[", 
+  RowBox[{"p1", ",", "p2", ",", "p3", ",", "p4", ",", "p5", ",", 
+   RowBox[{"PlotRange", "\[Rule]", "Automatic"}], ",", 
+   RowBox[{"PlotRangeClipping", "\[Rule]", "False"}], ",", 
+   RowBox[{"AspectRatio", "\[Rule]", "1"}], ",", 
+   RowBox[{"AxesOrigin", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{"0", ",", "0"}], "}"}]}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.510326589466896*^9, 3.5103267438092813`*^9}, {
+   3.510327029502184*^9, 3.510327031910204*^9}, 3.510327111417214*^9, {
+   3.510327158927671*^9, 3.510327159964076*^9}, 3.510327192054523*^9, {
+   3.510327279351489*^9, 3.51032732265704*^9}, {3.510327367268671*^9, 
+   3.510327384254718*^9}, {3.5103275464270687`*^9, 3.510327672232718*^9}, {
+   3.510327727019621*^9, 3.510327898537229*^9}, {3.51032792968862*^9, 
+   3.5103280340628157`*^9}, {3.5103281354880342`*^9, 3.510328201395817*^9}, {
+   3.510328408152844*^9, 3.510328417960779*^9}, {3.5103285160416307`*^9, 
+   3.510328583884387*^9}, {3.510328645766136*^9, 3.510328693830373*^9}, {
+   3.510328725344392*^9, 3.510328804925262*^9}, {3.510328836855878*^9, 
+   3.5103289257041492`*^9}, {3.510328955938841*^9, 3.510328981557041*^9}, {
+   3.51032902168093*^9, 3.510329035984586*^9}, {3.51032907289149*^9, 
+   3.510329083633217*^9}, {3.510330161218213*^9, 3.510330167933022*^9}, {
+   3.510332418731847*^9, 3.5103324306162987`*^9}, {3.510332913647956*^9, 
+   3.510332955352859*^9}, {3.510337083002366*^9, 3.5103371281257477`*^9}, {
+   3.5103404404853363`*^9, 3.510340455446203*^9}, {3.510340798201528*^9, 
+   3.5103408048438883`*^9}, {3.5103642374078693`*^9, 3.510364238079091*^9}, {
+   3.51036427539754*^9, 3.5103642916004267`*^9}, {3.510364486197896*^9, 
+   3.5103646255423727`*^9}, {3.510364693486517*^9, 3.510364837757464*^9}, {
+   3.5103655163149223`*^9, 3.5103656044786177`*^9}, {3.510442470758321*^9, 
+   3.510442476552999*^9}, {3.510591952773282*^9, 3.5105920061398478`*^9}, {
+   3.510592124013715*^9, 3.510592130642364*^9}, {3.510592194296628*^9, 
+   3.5105922118937902`*^9}}]
+},
+WindowSize->{866, 640},
+WindowMargins->{{Automatic, 46}, {Automatic, 64}},
+FrontEndVersion->"7.0 for Linux x86 (64-bit) (February 25, 2009)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[545, 20, 65, 1, 32, "Input"],
+Cell[613, 23, 3786, 86, 165, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)

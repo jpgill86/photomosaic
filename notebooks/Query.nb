@@ -1,0 +1,116 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[      3412,        107]
+NotebookOptionsPosition[      2982,         89]
+NotebookOutlinePosition[      3319,        104]
+CellTagsIndexPosition[      3276,        101]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"<<", "\"\<~/Desktop/out\>\""}]], "Input",
+ CellChangeTimes->{{3.510601714148286*^9, 3.510601736786147*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"dist", "[", 
+    RowBox[{"a_", ",", "b_"}], "]"}], "/;", 
+   RowBox[{
+    RowBox[{"Length", "[", "a", "]"}], "\[Equal]", 
+    RowBox[{"Length", "[", "b", "]"}]}]}], ":=", 
+  RowBox[{"Sqrt", "[", 
+   RowBox[{"Sum", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"a", "[", 
+         RowBox[{"[", "i", "]"}], "]"}], "-", 
+        RowBox[{"b", "[", 
+         RowBox[{"[", "i", "]"}], "]"}]}], ")"}], "^", "2"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", 
+       RowBox[{"Length", "[", "a", "]"}]}], "}"}]}], "]"}], "]"}]}]], "Input",\
+
+ CellChangeTimes->{{3.510577480609625*^9, 3.510577581421596*^9}, {
+  3.510583792639699*^9, 3.5105837996516113`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"rangeSearch", "[", 
+   RowBox[{"data_", ",", "query_", ",", "range_"}], "]"}], ":=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"Flatten", "[", 
+     RowBox[{"Position", "[", 
+      RowBox[{"#", ",", 
+       RowBox[{"x_", "/;", 
+        RowBox[{"x", "\[LessEqual]", "range"}]}], ",", "1"}], "]"}], "]"}], 
+    "&"}], "/@", 
+   RowBox[{"Outer", "[", 
+    RowBox[{"dist", ",", "query", ",", "data", ",", "1"}], "]"}]}]}]], "Input",\
+
+ CellChangeTimes->{{3.5105824059556837`*^9, 3.510582559748908*^9}, {
+  3.5105826105514803`*^9, 3.510582623946617*^9}, {3.510583334936721*^9, 
+  3.510583390536646*^9}, {3.510583553386964*^9, 3.510583567683614*^9}, {
+  3.510584574999611*^9, 3.510584599891685*^9}}],
+
+Cell[BoxData[
+ RowBox[{"results", "=", 
+  RowBox[{"Sort", "/@", "results"}]}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"r", "=", 
+  RowBox[{"rangeSearch", "[", 
+   RowBox[{"data", ",", "query", ",", "range"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.510602641403322*^9, 3.5106026415729513`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"results", "===", "r"}]], "Input",
+ CellChangeTimes->{{3.510577447285159*^9, 3.510577449937283*^9}, {
+   3.510578006555497*^9, 3.510578032258505*^9}, {3.510578999152183*^9, 
+   3.510579010062263*^9}, {3.510579111102882*^9, 3.5105791191068*^9}, {
+   3.510583673198731*^9, 3.510583702875312*^9}, {3.510584587061438*^9, 
+   3.510584587188158*^9}, {3.5105846180617113`*^9, 3.510584627829402*^9}, {
+   3.510587788278532*^9, 3.510587790181744*^9}, {3.510600545138596*^9, 
+   3.510600549147316*^9}, 3.510602647119008*^9}]
+},
+WindowSize->{811, 625},
+WindowMargins->{{Automatic, 58}, {71, Automatic}},
+FrontEndVersion->"7.0 for Linux x86 (64-bit) (February 25, 2009)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[545, 20, 131, 2, 32, "Input"],
+Cell[679, 24, 740, 23, 32, "Input"],
+Cell[1422, 49, 722, 18, 55, "Input"],
+Cell[2147, 69, 88, 2, 32, "Input"],
+Cell[2238, 73, 200, 4, 32, "Input"],
+Cell[2441, 79, 537, 8, 32, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)

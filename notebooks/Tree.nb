@@ -1,0 +1,94 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[      3274,         85]
+NotebookOptionsPosition[      2740,         65]
+NotebookOutlinePosition[      3290,         85]
+CellTagsIndexPosition[      3247,         82]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"<<", "\"\<~/Desktop/out\>\""}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"TreePlot", "[", 
+  RowBox[{
+   RowBox[{"tree", "[", 
+    RowBox[{"[", "1", "]"}], "]"}], ",", "Top", ",", 
+   RowBox[{"tree", "[", 
+    RowBox[{"[", "2", "]"}], "]"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.510592986896801*^9, 3.5105929893021717`*^9}, {
+  3.5105935331967783`*^9, 3.510593591824293*^9}, {3.510593622475092*^9, 
+  3.5105936345754004`*^9}, {3.510593681350209*^9, 3.510593693918747*^9}, {
+  3.510593745153944*^9, 3.510593757700845*^9}, {3.510594947311057*^9, 
+  3.510594950481052*^9}, {3.510595088332633*^9, 3.51059509113382*^9}, {
+  3.510595160241123*^9, 3.510595169627982*^9}, {3.510595217180379*^9, 
+  3.510595219096911*^9}, {3.510595446183156*^9, 3.510595449931176*^9}, {
+  3.5105955094945087`*^9, 3.510595515127924*^9}, {3.510595657512824*^9, 
+  3.510595663872375*^9}, {3.510596306407585*^9, 3.510596317007309*^9}, {
+  3.510597128631192*^9, 3.510597135021077*^9}, {3.510600276230029*^9, 
+  3.510600295510198*^9}, {3.5106009480146027`*^9, 3.5106009801054983`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"TreePlot", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"Part", "[", 
+      RowBox[{"#", ",", "1"}], "]"}], "&"}], "/@", 
+    RowBox[{"tree", "[", 
+     RowBox[{"[", "1", "]"}], "]"}]}], ",", "Top", ",", 
+   RowBox[{"tree", "[", 
+    RowBox[{"[", "2", "]"}], "]"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.510592986896801*^9, 3.5105929893021717`*^9}, {
+  3.5105935331967783`*^9, 3.510593591824293*^9}, {3.510593622475092*^9, 
+  3.5105936345754004`*^9}, {3.510593681350209*^9, 3.510593693918747*^9}, {
+  3.510593745153944*^9, 3.510593757700845*^9}, {3.510594947311057*^9, 
+  3.510594950481052*^9}, {3.510595088332633*^9, 3.51059509113382*^9}, {
+  3.510595160241123*^9, 3.510595169627982*^9}, {3.510595217180379*^9, 
+  3.510595219096911*^9}, {3.510595446183156*^9, 3.510595449931176*^9}, {
+  3.5105955094945087`*^9, 3.510595515127924*^9}, {3.510595657512824*^9, 
+  3.510595663872375*^9}, {3.510596306407585*^9, 3.510596317007309*^9}, {
+  3.510597128631192*^9, 3.510597135021077*^9}, {3.510600276230029*^9, 
+  3.510600295510198*^9}, {3.5106009480146027`*^9, 3.510600958799663*^9}}]
+},
+WindowSize->{861, 640},
+WindowMargins->{{Automatic, 142}, {52, Automatic}},
+PrintingPageRange->{Automatic, Automatic},
+PrintingOptions->{"Magnification"->1.,
+"PaperOrientation"->"Portrait",
+"PaperSize"->{611.28, 789.57},
+"PostScriptOutputFile"->"/home/gill/Desktop/Labelled Plot.nb.ps"},
+FrontEndVersion->"7.0 for Linux x86 (64-bit) (February 25, 2009)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[545, 20, 65, 1, 32, "Input"],
+Cell[613, 23, 1007, 17, 32, "Input"],
+Cell[1623, 42, 1113, 21, 32, "Input"]
+}
+]
+*)
+
+(* End of internal cache information *)
