@@ -182,7 +182,7 @@ main() {
    printf("moving members of t into u\n", i);
    ap_List *u = NULL;
    while( list_size(t) > 0 ) {
-      move_list( 0, &t, &u );
+      move_point( 0, &t, &u );
    }
    printf("members of u:\n");
    i0 = u;
@@ -218,7 +218,16 @@ main() {
    */
 
    /*
-   // Test for mem leaks in free_lists and add_point
+   // Test for mem leaks in build_tree, make_cluster,
+   // free_tree, and free_cluster
+   for( i = 0; i < 1e6; i++ ) {
+      free_tree( tree );
+      tree = build_tree( s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+   }
+   */
+
+   /*
+   // Test for mem leaks in free_list and add_point
    for( i = 0; i < 1e7; i++ ) {
       free_list(s);
       s = NULL;
@@ -228,12 +237,12 @@ main() {
    */
 
    /*
-   // Test for mem leaks in list_size and move_list
+   // Test for mem leaks in list_size and move_point
    for( i = 0; i < 1e7; i++ ) {
       while( list_size(s) > 0 )
-         move_list( 0, &s, &t );
+         move_point( 0, &s, &t );
       while( list_size(t) > 0 )
-         move_list( 0, &t, &s );
+         move_point( 0, &t, &s );
    }
    */
 

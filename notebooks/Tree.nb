@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[      3274,         85]
-NotebookOptionsPosition[      2740,         65]
-NotebookOutlinePosition[      3290,         85]
-CellTagsIndexPosition[      3247,         82]
+NotebookDataLength[      4347,        125]
+NotebookOptionsPosition[      3775,        104]
+NotebookOutlinePosition[      4325,        124]
+CellTagsIndexPosition[      4282,        121]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -21,24 +21,65 @@ Notebook[{
 Cell[BoxData[
  RowBox[{"<<", "\"\<~/Desktop/out\>\""}]], "Input"],
 
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"root", "=", 
+   RowBox[{
+    RowBox[{"Select", "[", 
+     RowBox[{"tree", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Depth", "[", "#", "]"}], "\[Equal]", "2"}], "&"}]}], "]"}], 
+    "[", 
+    RowBox[{"[", 
+     RowBox[{"1", ",", "1"}], "]"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"vertices", "=", 
+   RowBox[{"SparseArray", "[", 
+    RowBox[{"Select", "[", 
+     RowBox[{"tree", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"Depth", "[", "#", "]"}], "\[Equal]", "2"}], "&"}]}], "]"}], 
+    "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"edges", "=", 
+   RowBox[{"Select", "[", 
+    RowBox[{"tree", ",", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"Depth", "[", "#", "]"}], "\[Equal]", "3"}], "&"}]}], "]"}]}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.5107629086804457`*^9, 3.5107629582922688`*^9}, {
+  3.510763192264306*^9, 3.510763197652693*^9}, {3.510763714876878*^9, 
+  3.510763722127412*^9}}],
+
 Cell[BoxData[
  RowBox[{"TreePlot", "[", 
-  RowBox[{
-   RowBox[{"tree", "[", 
-    RowBox[{"[", "1", "]"}], "]"}], ",", "Top", ",", 
-   RowBox[{"tree", "[", 
-    RowBox[{"[", "2", "]"}], "]"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.510592986896801*^9, 3.5105929893021717`*^9}, {
-  3.5105935331967783`*^9, 3.510593591824293*^9}, {3.510593622475092*^9, 
-  3.5105936345754004`*^9}, {3.510593681350209*^9, 3.510593693918747*^9}, {
-  3.510593745153944*^9, 3.510593757700845*^9}, {3.510594947311057*^9, 
-  3.510594950481052*^9}, {3.510595088332633*^9, 3.51059509113382*^9}, {
-  3.510595160241123*^9, 3.510595169627982*^9}, {3.510595217180379*^9, 
-  3.510595219096911*^9}, {3.510595446183156*^9, 3.510595449931176*^9}, {
-  3.5105955094945087`*^9, 3.510595515127924*^9}, {3.510595657512824*^9, 
-  3.510595663872375*^9}, {3.510596306407585*^9, 3.510596317007309*^9}, {
-  3.510597128631192*^9, 3.510597135021077*^9}, {3.510600276230029*^9, 
-  3.510600295510198*^9}, {3.5106009480146027`*^9, 3.5106009801054983`*^9}}],
+  RowBox[{"edges", ",", "Top", ",", "root", ",", 
+   RowBox[{"VertexRenderingFunction", "\[Rule]", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"Text", "[", 
+       RowBox[{
+        RowBox[{"Framed", "[", 
+         RowBox[{
+          RowBox[{"vertices", "[", 
+           RowBox[{"[", "#2", "]"}], "]"}], ",", 
+          RowBox[{"Background", "\[Rule]", "LightBlue"}], ",", 
+          RowBox[{"RoundingRadius", "\[Rule]", "4"}]}], "]"}], ",", "#1"}], 
+       "]"}], "&"}], ")"}]}]}], "]"}]], "Input",
+ CellChangeTimes->CompressedData["
+1:eJwdzlsoQ3EAx/G1ZLO05NLYJGQuadJMSC57oKVRNh6wh+FYbbmntFITIVFS
+1Ig1ErmEPFCYy+pQo5ZLkhS5pE4ze3BrFOf3f/j2ef3G1bVoGrgcDieWDVo3
+dDueJEZJLS8Suer5Pzil9we+sr5nuAVw1agJhowiNRTqDY4wGP2aIIaapk0J
+THs3rsNjyk30zgmcUKmiiKot3glsjlScwiVaeg6fo+qJplvaC+WneW8w4GLt
+k3yIqC8oNKYHeVktzA/RJyithve59hq4LQ8/hEsr90SDbqDExzqk9amhvbPb
+BvP1vbOQW9n3lJ/MKMc+UrxQ/uLgFrBe2g4ioF36K4a/uTkxsP9bnAiFLhmx
+nKeVwT1RNVEY/1IEKxYsxZD/OLIBrS4rMfsgiIZ90oQjSPeYzyAl272GHXz/
+LTRJpx/gzM0+AwXpox7Y05bBKWTtmnCHwMA/lRiWtZolkOe0ZUHH5FUhlEvU
+tTCuapyCs8ON7TDzLm8Q/gODxfaS
+  "]],
 
 Cell[BoxData[
  RowBox[{"TreePlot", "[", 
@@ -46,11 +87,8 @@ Cell[BoxData[
    RowBox[{
     RowBox[{
      RowBox[{"Part", "[", 
-      RowBox[{"#", ",", "1"}], "]"}], "&"}], "/@", 
-    RowBox[{"tree", "[", 
-     RowBox[{"[", "1", "]"}], "]"}]}], ",", "Top", ",", 
-   RowBox[{"tree", "[", 
-    RowBox[{"[", "2", "]"}], "]"}]}], "]"}]], "Input",
+      RowBox[{"#", ",", "1"}], "]"}], "&"}], "/@", "edges"}], ",", "Top", ",",
+    "root"}], "]"}]], "Input",
  CellChangeTimes->{{3.510592986896801*^9, 3.5105929893021717`*^9}, {
   3.5105935331967783`*^9, 3.510593591824293*^9}, {3.510593622475092*^9, 
   3.5105936345754004`*^9}, {3.510593681350209*^9, 3.510593693918747*^9}, {
@@ -61,7 +99,8 @@ Cell[BoxData[
   3.5105955094945087`*^9, 3.510595515127924*^9}, {3.510595657512824*^9, 
   3.510595663872375*^9}, {3.510596306407585*^9, 3.510596317007309*^9}, {
   3.510597128631192*^9, 3.510597135021077*^9}, {3.510600276230029*^9, 
-  3.510600295510198*^9}, {3.5106009480146027`*^9, 3.510600958799663*^9}}]
+  3.510600295510198*^9}, {3.5106009480146027`*^9, 3.510600958799663*^9}, {
+  3.510763083900511*^9, 3.5107630899165382`*^9}}]
 },
 WindowSize->{861, 640},
 WindowMargins->{{Automatic, 142}, {52, Automatic}},
@@ -85,8 +124,9 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[545, 20, 65, 1, 32, "Input"],
-Cell[613, 23, 1007, 17, 32, "Input"],
-Cell[1623, 42, 1113, 21, 32, "Input"]
+Cell[613, 23, 991, 31, 77, "Input"],
+Cell[1607, 56, 1102, 25, 77, "Input"],
+Cell[2712, 83, 1059, 19, 32, "Input"]
 }
 ]
 *)

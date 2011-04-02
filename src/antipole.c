@@ -40,13 +40,17 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
 #ifdef DEBUG
    static int depth = -1;
    depth++;
-   if( depth == 0 )
-      printf("tree = {{");
 #endif
 
    // Create the new ap_Tree
    ap_Tree *new_tree = malloc( sizeof( ap_Tree ) );
    assert( new_tree );
+
+#ifdef DEBUG
+   if( depth == 0 )
+      printf("tree = {");
+   printf("%ld->%d,", (long)new_tree, list_size( set ));
+#endif
 
    // Determine if this tree is an internal node or a leaf
    if( antipole_a == NULL || antipole_b == NULL ) {
@@ -90,12 +94,6 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
          new_tree->radius_b = fmax( dist_b, new_tree->radius_b );
       }
    }
-   free( set );
-
-#ifdef DEBUG
-   int size_a = list_size(set_a);
-   int size_b = list_size(set_b);
-#endif
 
    // Build subtrees as children for this node using the two
    // point subsets
@@ -105,15 +103,33 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
    new_tree->right = build_tree( set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
 
 #ifdef DEBUG
-   printf("{%ld->%ld,\"id%d,s%d\"},", (long)new_tree, (long)new_tree->left, new_tree->a->id, size_a);
+   printf("{%ld->%ld,%d},", (long)new_tree, (long)new_tree->left, new_tree->a->id);
    if( depth == 0 )
-      printf("{%ld->%ld,\"id%d,s%d\"}},%ld};\n", (long)new_tree, (long)new_tree->right, new_tree->b->id, size_b, (long)new_tree);
+      printf("{%ld->%ld,%d}};\n", (long)new_tree, (long)new_tree->right, new_tree->b->id);
    else
-      printf("{%ld->%ld,\"id%d,s%d\"},", (long)new_tree, (long)new_tree->right, new_tree->b->id, size_b);
+      printf("{%ld->%ld,%d},", (long)new_tree, (long)new_tree->right, new_tree->b->id);
    depth--;
 #endif
 
+   free_list( set_a );
+   free_list( set_b );
+
    return new_tree;
+}
+
+
+// Recursively free up memory used by an ap_Tree.
+void
+free_tree( ap_Tree *tree ) {
+   if( tree != NULL ) {
+      if( tree->is_leaf ) {
+         free_cluster( tree->cluster );
+      } else {
+         free_tree( tree->left );
+         free_tree( tree->right );
+      }
+      free( tree );
+   }
 }
 
 
@@ -150,8 +166,17 @@ make_cluster( ap_List *set, int dimensionality, DIST_FUNC ) {
       }
    }
 
-   free( set );
    return new_cluster;
+}
+
+
+// Recursively free up memory used by an ap_Cluster.
+void
+free_cluster( ap_Cluster *cluster ) {
+   if( cluster != NULL ) {
+      free_list( cluster->members );
+      free( cluster );
+   }
 }
 
 
