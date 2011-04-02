@@ -35,7 +35,7 @@
 // point, and the radii of the subsets. Leaves contain a
 // cluster of points.
 ap_Tree*
-build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC ) {
+build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC ) {
 
 #ifdef DEBUG
    static int depth = -1;
@@ -80,7 +80,7 @@ build_tree( ap_List *set, double target_radius, ap_Point *antipole_a, ap_Point *
    // nearest antipole, and update the radius of the subset if
    // necessary
    double dist_a, dist_b;
-   ap_List *index, *set_a = NULL, *set_b = NULL;
+   ap_PointList *index, *set_a = NULL, *set_b = NULL;
    for( index = set; index != NULL; index = index->next ) {
       dist_a = dist( new_tree->a, index->p );
       dist_b = dist( new_tree->b, index->p );
@@ -139,9 +139,9 @@ free_tree( ap_Tree *tree ) {
 // another to group together), the identity of the geometric
 // median of the cluster, and the cluster radius.
 ap_Cluster*
-make_cluster( ap_List *set, int dimensionality, DIST_FUNC ) {
+make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
 
-   ap_List *index;
+   ap_PointList *index;
    double dist_centroid;
 
    // Create the new ap_Cluster and initialize it
@@ -180,18 +180,19 @@ free_cluster( ap_Cluster *cluster ) {
 }
 
 
-// Prepend to an ap_List an ap_Point with a distance value
-// (to an ancestor, cluster centroid, or query, depending on
-// the use of the ap_List). Requires the address of an
-// ap_List pointer so that the list can be given a new first
-// member. The ap_List pointer should be set to NULL before
-// calling this function if the list is empty; otherwise the
-// list may not terminate properly.
+// Prepend to an ap_PointList an ap_Point with a distance
+// value (to an ancestor, cluster centroid, or query,
+// depending on the use of the ap_PointList). Requires the
+// address of an ap_PointList pointer so that the list can
+// be given a new first member. The ap_PointList pointer
+// should be set to NULL before calling this function if the
+// list is empty; otherwise the list may not terminate
+// properly.
 void
-add_point( ap_List **set, ap_Point *p, double dist ) {
+add_point( ap_PointList **set, ap_Point *p, double dist ) {
 
    // Check for uniqueness
-   ap_List *index = *set;
+   ap_PointList *index = *set;
    while( index != NULL ) {
       if( index->p == p )
          return;
@@ -199,7 +200,7 @@ add_point( ap_List **set, ap_Point *p, double dist ) {
    }
 
    // Add the point if it is unique to the list
-   ap_List *new_list_member = malloc( sizeof( ap_List ) );
+   ap_PointList *new_list_member = malloc( sizeof( ap_PointList ) );
    assert( new_list_member );
    new_list_member->p = p;
    new_list_member->dist = dist;
@@ -208,22 +209,23 @@ add_point( ap_List **set, ap_Point *p, double dist ) {
 }
 
 
-// Move the first instance of point p found in the ap_List
-// *from into the ap_List *to. Requires the addresses of the
-// ap_List pointers so that the moved member can be
-// prepended to *to, and so that if the first member of
-// ap_List *from is moved, the second member can become the
-// new first member. The ap_List pointer *to should be set
-// to NULL before calling this function if the list is
-// empty; otherwise the list may not terminate properly.
+// Move the first instance of point p found in the
+// ap_PointList *from into the ap_PointList *to. Requires
+// the addresses of the ap_PointList pointers so that the
+// moved member can be prepended to *to, and so that if the
+// first member of ap_PointList *from is moved, the second
+// member can become the new first member. The ap_PointList
+// pointer *to should be set to NULL before calling this
+// function if the list is empty; otherwise the list may not
+// terminate properly.
 void
-move_point( ap_Point *p, ap_List **from, ap_List **to ) {
+move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 
    int i = 0;
-   ap_List *before = NULL, *index = *from;
+   ap_PointList *before = NULL, *index = *from;
 
-   // Find the first ap_List containing p, and store the link
-   // preceding it for later user
+   // Find the first ap_PointList containing p, and store the
+   // link preceding it for later user
    while( index != NULL && index->p != p ) {
       before = index;
       index = index->next;
@@ -246,22 +248,22 @@ move_point( ap_Point *p, ap_List **from, ap_List **to ) {
 
 
 // Move the n-th member (start counting at zero) of the
-// ap_List *from into the ap_List *to. Requires the
-// addresses of the ap_List pointers so that the moved
-// member can be prepended to *to, and so that if the first
-// member of ap_List *from is moved, the second member can
-// become the new first member. The ap_List pointer *to
-// should be set to NULL before calling this function if the
-// list is empty; otherwise the list may not terminate
-// properly.
+// ap_PointList *from into the ap_PointList *to. Requires
+// the addresses of the ap_PointList pointers so that the
+// moved member can be prepended to *to, and so that if the
+// first member of ap_PointList *from is moved, the second
+// member can become the new first member. The ap_PointList
+// pointer *to should be set to NULL before calling this
+// function if the list is empty; otherwise the list may not
+// terminate properly.
 void
-move_nth_point( int n, ap_List **from, ap_List **to ) {
+move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    int i;
-   ap_List *before = NULL, *index = *from;
+   ap_PointList *before = NULL, *index = *from;
 
-   // Find the n-th ap_List, and store the link preceding it
-   // for later user
+   // Find the n-th ap_PointList, and store the link preceding
+   // it for later user
    for( i = 0; i < n; i++ ) {
       before = index;
       index = index->next;
@@ -279,11 +281,11 @@ move_nth_point( int n, ap_List **from, ap_List **to ) {
 }
 
 
-// Create a new ap_List with the same contents as set.
-ap_List*
-copy_list( ap_List *set ) {
+// Create a new ap_PointList with the same contents as set.
+ap_PointList*
+copy_list( ap_PointList *set ) {
 
-   ap_List *index = set, *new_list = NULL;
+   ap_PointList *index = set, *new_list = NULL;
    while( index != NULL ) {
       add_point( &new_list, index->p, index->dist );
       index = index->next;
@@ -292,10 +294,10 @@ copy_list( ap_List *set ) {
 }
 
 
-// Recursively free up memory used by an ap_List linked
+// Recursively free up memory used by an ap_PointList linked
 // list.
 void
-free_list( ap_List *set ) {
+free_list( ap_PointList *set ) {
 
    if( set != NULL ) {
       free_list( set->next );
@@ -306,7 +308,7 @@ free_list( ap_List *set ) {
 
 // Find the size of a set of points
 int
-list_size( ap_List *set ) {
+list_size( ap_PointList *set ) {
 
    int size = 0;
    while( set != NULL ) {
@@ -320,12 +322,12 @@ list_size( ap_List *set ) {
 // Find the exact geometric median of a set of points and
 // store it in median
 void
-exact_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
+exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC ) {
 
    *median = NULL;
 
    int i, j, d, size = list_size( set );
-   ap_List *i_list, *j_list;
+   ap_PointList *i_list, *j_list;
 
    // Initialize the array of distance sums
    double sums[ size ];
@@ -359,11 +361,11 @@ exact_1_median( ap_List *set, ap_Point **median, DIST_FUNC ) {
 // of points and store it in median. The user should
 // initialize the random number generator using srand.
 void
-approx_1_median( ap_List *set, ap_Point **median, int dimensionality, DIST_FUNC ) {
+approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC ) {
 
    *median = NULL;
 
-   ap_List *contestants = copy_list( set ), *tournament, *winners;
+   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
    int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
@@ -408,12 +410,12 @@ approx_1_median( ap_List *set, ap_Point **median, int dimensionality, DIST_FUNC 
 // Find the two points in the set that are furthest from one
 // another and store them in antipole_a and antipole_b.
 void
-exact_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
+exact_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   ap_List *i_list, *j_list;
+   ap_PointList *i_list, *j_list;
    double d, max_dist = -1;
 
    // Calculate the distance between each pair of points and
@@ -437,12 +439,12 @@ exact_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, DIS
 // The user should initialize the random number generator
 // using srand.
 void
-approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC ) {
+approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   ap_List *contestants = copy_list( set ), *tournament, *winners;
+   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
    int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
    int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
 
@@ -490,12 +492,12 @@ approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, in
 // one another is greater than the target cluster
 // diameter
 void
-adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
+adapted_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
 
-   ap_List *i_list, *j_list;
+   ap_PointList *i_list, *j_list;
 
    // Calculate the distance between each pair of points and
    // if a distance is greater than the target cluster diameter
@@ -516,7 +518,7 @@ adapted_approx_antipoles( ap_List *set, ap_Point **antipole_a, ap_Point **antipo
 // Search the set for a point that when paired with ancestor
 // could serve as an antipole pair.
 void
-check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b ) {
+check_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b ) {
 
    *antipole_a = NULL;
    *antipole_b = NULL;
@@ -524,7 +526,7 @@ check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_
    // Search the set for a point whose distance to the ancestor
    // is greater than 2*target_radius and save it and the
    // ancestor as antipoles
-   ap_List *index_i, *index_j;
+   ap_PointList *index_i, *index_j;
    for( index_i = set; index_i != NULL; index_i = index_i->next ) {
       for( index_j = index_i->p->ancestors; index_j != NULL; index_j = index_j->next ) {
          if( index_j->p == ancestor ) {
@@ -542,7 +544,7 @@ check_for_antipoles( ap_List *set, double target_radius, ap_Point *ancestor, ap_
 // Search the tree recursively for all points within range
 // of query and place them in out.
 void
-range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_FUNC ) {
+range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, DIST_FUNC ) {
 
    if( !tree->is_leaf ) {
       // Calculate the distance between query and the antipoles
@@ -569,7 +571,7 @@ range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_
       // Once the search has returned from both subtrees, remove
       // the antipoles of tree from the ancestor list for query,
       // since they will no longer be relevant to further searches
-      ap_List *trash = NULL;
+      ap_PointList *trash = NULL;
       move_point( tree->a, &(query->ancestors), &trash );
       move_point( tree->b, &(query->ancestors), &trash );
       free_list( trash );
@@ -584,7 +586,7 @@ range_search( ap_Tree *tree, ap_Point *query, double range, ap_List **out, DIST_
 // Find the members of the cluster that are within range of
 // query and add them to the list out.
 void
-range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List **out, DIST_FUNC ) {
+range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC ) {
 
    // Calculate the distance between the query and the centroid
    // and add it to out if it is within range
@@ -602,7 +604,7 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
    // determine if the entire cluster can be included as a
    // group
    if( dist_centroid <= range - cluster->radius ) {
-      ap_List *index = cluster->members;
+      ap_PointList *index = cluster->members;
       while( index != NULL ) {
          add_point( out, index->p, -1 );
          index = index->next;
@@ -611,8 +613,8 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
    }
 
    // Check each member of the cluster
-   ap_List *index = cluster->members;
-   ap_List *query_ancestors, *cluster_ancestors;
+   ap_PointList *index = cluster->members;
+   ap_PointList *query_ancestors, *cluster_ancestors;
    while( index != NULL ) {
       // Use the triangle inequality with the cluster member's
       // distance to centroid to determine if the point is
@@ -664,6 +666,25 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_List
 next_cluster_member:
       index = index->next;
    }
+}
+
+
+// ...
+void nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC ) {
+
+   int i;
+   ap_PointList *outQueue = *out;
+   outQueue = malloc( sizeof( ap_PointList[ k ] ) );
+   for( i = 0; i < k; i++ ) {
+      outQueue[ i ].p = NULL;
+      outQueue[ i ].dist = -1;
+      outQueue[ i ].next = NULL;
+   }
+}
+
+
+// ...
+void nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_PointList **out, DIST_FUNC ) {
 }
 
 

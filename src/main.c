@@ -82,8 +82,8 @@ main() {
    printf("};\n");
 #endif
 
-   // Place the ap_Points in an ap_List
-   ap_List *s = NULL;
+   // Place the ap_Points in an ap_PointList
+   ap_PointList *s = NULL;
    for( i = 0; i < n; i++ )
       add_point( &s, &data[i], 0 );
 
@@ -140,7 +140,7 @@ main() {
    printf("(* range search *)\n");
    double range = 40;
    printf("range = %f;\n", range);
-   ap_List *results[n_query];
+   ap_PointList *results[n_query];
    for( i = 0; i < n_query; i++ ) {
       results[i] = NULL;
       range_search( tree, &query[i], range, &results[i], dist );
@@ -149,7 +149,7 @@ main() {
 #ifdef DEBUG
    // Dump the search results for Mathematica
    printf("(* query results *)\n");
-   ap_List *index;
+   ap_PointList *index;
    printf("results = {");
    for( i = 0; i < n_query; i++ ) {
       printf("{");
@@ -169,8 +169,8 @@ main() {
 
    /*
    // Copy s into t
-   ap_List *t = copy_list( s );
-   ap_List *i0 = s, *j0 = t;
+   ap_PointList *t = copy_list( s );
+   ap_PointList *i0 = s, *j0 = t;
 
    // Move members of t into u
    printf("members of t:\n");
@@ -180,7 +180,7 @@ main() {
       i0 = i0->next;
    }
    printf("moving members of t into u\n", i);
-   ap_List *u = NULL;
+   ap_PointList *u = NULL;
    while( list_size(t) > 0 ) {
       move_point( 0, &t, &u );
    }
