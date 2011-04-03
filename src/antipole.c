@@ -306,6 +306,8 @@ void heap_insert( ap_Heap **heap, void *item, double key ) {
       h->size = 0;
       h->items = calloc( h->capacity, sizeof( void* ) );
       h->keys = calloc( h->capacity, sizeof( double ) );
+      h->min_item = NULL;
+      h->min_key = -1;
       h->max_item = NULL;
       h->max_key = -1;
    }
@@ -343,6 +345,12 @@ void heap_insert( ap_Heap **heap, void *item, double key ) {
       } else {
          break;
       }
+   }
+
+   // Update max_item and max_key if necessary
+   if( h->min_key == -1 || key < h->min_key ) {
+      h->min_item = item;
+      h->min_key = key;
    }
 
    // Update max_item and max_key if necessary
@@ -415,6 +423,17 @@ void heap_remove( ap_Heap *heap, void *item ) {
       }
    }
 
+   // Update min_item and min_key if necessary
+   if( item == heap->min_item ) {
+      if( heap->size > 0 ) {
+         heap->min_item = heap->items[ 0 ];
+         heap->min_key = heap->keys[ 0 ];
+      } else {
+         heap->min_item = NULL;
+         heap->min_key = -1;
+      }
+   }
+
    // Update max_item and max_key if necessary
    if( item == heap->max_item ) {
       heap->max_item = NULL;
@@ -447,6 +466,8 @@ heap_to_list( ap_Heap *heap ) {
       new_heap->items[ i ] = heap->items[ i ];
       new_heap->keys[ i ] = heap->keys[ i ];
    }
+   new_heap->min_item = heap->min_item;
+   new_heap->min_key = heap->min_key;
    new_heap->max_item = heap->max_item;
    new_heap->max_key = heap->max_key;
 
@@ -850,10 +871,8 @@ range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_Poin
       // calculate the distance between the query and the cluster
       // member and add it to out if it is within range
       d = dist( index->p, query );
-      if( d <= range ) {
+      if( d <= range )
          add_point( out, index->p, d );
-         goto next_cluster_member;
-      }
 
 next_cluster_member:
       index = index->next;
@@ -862,21 +881,151 @@ next_cluster_member:
 
 
 // ...
-void nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC ) {
+void
+nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC ) {
 
-   int i;
-   ap_PointList *outQueue = *out;
-   outQueue = malloc( sizeof( ap_PointList[ k ] ) );
-   for( i = 0; i < k; i++ ) {
-      outQueue[ i ].p = NULL;
-      outQueue[ i ].dist = -1;
-      outQueue[ i ].next = NULL;
+   double dist_a, dist_b;
+   ap_Tree *index;
+   ap_Heap *tree_pq = NULL, *point_pq = NULL;
+
+   // Initialize the tree priority queue with the root of the
+   // tree
+   heap_insert( &tree_pq, tree, -1 );
+
+   // ...
+   while( tree_pq->size > 0 ) {
+
+      // If the next nearest subtree is further away than the
+      // furthest member of point_pq, when quit
+      if( point_pq != NULL && point_pq->size == k && tree_pq->min_key > point_pq->max_key )
+         break;
+
+      // Pop off the next tree in the priority queue
+      index = (ap_Tree*)tree_pq->min_item;
+      heap_remove( tree_pq, tree_pq->min_item );
+
+      if( index->is_leaf ) {
+         // Visit the cluster if the tree is a leaf
+         nearest_visit_cluster( index->cluster, query, k, &point_pq, dist );
+      } else {
+         // Otherwise, check the antipoles for this tree to see if
+         // they should be added to the point priority queue
+         dist_a = nearest_check( index->a, query, k, &point_pq, dist );
+         dist_b = nearest_check( index->b, query, k, &point_pq, dist );
+
+         // And add the subtrees to the tree priority queue
+         heap_insert( &tree_pq, index->left, dist_a - index->radius_a );
+         heap_insert( &tree_pq, index->right, dist_b - index->radius_b );
+      }
+   }
+
+   *out = heap_to_list( point_pq );
+}
+
+
+// ...
+void
+nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC ) {
+
+   // Calculate the distance between the query and the centroid
+   // and add it to point_pq if it is closer than its furthest
+   // member
+   double dist_centroid = nearest_check( cluster->centroid, query, k, point_pq, dist );
+
+   // Use the triangle inequality with the cluster radius to
+   // determine if the entire cluster can be excluded as a
+   // group
+   if( *point_pq != NULL && (*point_pq)->size == k && dist_centroid > (*point_pq)->max_key + cluster->radius )
+      return;
+
+   // Check each member of the cluster
+   ap_PointList *index = cluster->members;
+   ap_PointList *query_ancestors, *cluster_ancestors;
+   while( index != NULL ) {
+      // Use the triangle inequality with the cluster member's
+      // distance to centroid to determine if the point is
+      // definitely further away than the furthest member of
+      // point_pq
+      if( *point_pq != NULL && (*point_pq)->size == k && dist_centroid > (*point_pq)->max_key + index->dist )
+         goto next_cluster_member;
+
+      // Use the triangle inequality with the cluster member's
+      // distance to centroid to determine if the point is
+      // definitely closer than the furthest member of point_pq
+      if( *point_pq != NULL && dist_centroid <= (*point_pq)->max_key - index->dist ) {
+         nearest_check( index->p, query, k, point_pq, dist );
+         goto next_cluster_member;
+      }
+
+      // Check the ancestors of the query and the member of the
+      // cluster
+      for( query_ancestors = query->ancestors; query_ancestors != NULL; query_ancestors = query_ancestors->next ) {
+         for( cluster_ancestors = index->p->ancestors; cluster_ancestors != NULL; cluster_ancestors = cluster_ancestors->next ) {
+            if( query_ancestors->p == cluster_ancestors->p ) {
+
+               // Use the triangle inequality with the cluster member's
+               // distance to ancestor to determine if the point is
+               // definitely further away than the furthest member of
+               // point_pq
+               if( *point_pq != NULL && (*point_pq)->size == k && query_ancestors->dist > (*point_pq)->max_key + cluster_ancestors->dist )
+                  goto next_cluster_member;
+
+               // Use the triangle inequality with the cluster member's
+               // distance to ancestor to determine if the point is
+               // definitely closer than the furthest member of point_pq
+               if( *point_pq != NULL && query_ancestors->dist <= (*point_pq)->max_key - cluster_ancestors->dist ) {
+                  nearest_check( index->p, query, k, point_pq, dist );
+                  goto next_cluster_member;
+               }
+            }
+         }
+      }
+
+      // Finally, if all methods of using precalculated distances
+      // to rule-out or rule-in the cluster member have failed,
+      // calculate the distance between the query and the cluster
+      // member and add it to point_pq if it is closer than its
+      // furthest member
+      nearest_check( index->p, query, k, point_pq, dist );
+
+next_cluster_member:
+      index = index->next;
    }
 }
 
 
 // ...
-void nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_PointList **out, DIST_FUNC ) {
+double
+nearest_check( ap_Point *p, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC ) {
+
+   int i;
+
+   // Find the distance between p and the query
+   double d = dist( p, query );
+
+   // Add p to the priority queue if the queue is empty
+   if( *point_pq == NULL ) {
+      heap_insert( point_pq, p, d );
+   } else {
+      // Add p to the priority queue if the queue needs more
+      // points, or if p is closer to query than the furthest
+      // member of point_pq and p is not already contained in
+      // point_pq
+      if( (*point_pq)->size < k || d < (*point_pq)->max_key ) {
+         for( i = 0; i < (*point_pq)->size; i++ ) {
+            if( p == (*point_pq)->items[ i ] )
+               return d;
+         }
+         heap_insert( point_pq, p, d );
+      }
+   }
+
+   // Reduce the size of the priority queue until it contains
+   // no more than k points
+   while( (*point_pq)->size > k )
+      heap_remove( *point_pq, (*point_pq)->max_item );
+
+   return d;
 }
 
 

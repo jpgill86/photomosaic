@@ -62,6 +62,8 @@ struct ap_Heap {
    int size;                  /* number of items in the heap */
    void **items;              /* array of items in heap */
    double *keys;              /* array of item keys */
+   void *min_item;            /* the item with the minimum key */
+   double min_key;            /* the minimum key */
    void *max_item;            /* the item with the maximum key */
    double max_key;            /* the maximum key */
 };
@@ -96,7 +98,8 @@ void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **
 void range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
 
 void nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
-void nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
+void nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
+double nearest_check( ap_Point *p, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
 
 #endif /* ANTIPOLE_H */
 

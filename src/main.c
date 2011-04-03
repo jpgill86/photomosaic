@@ -49,7 +49,8 @@ main() {
 
    // Create and initialize an array of ap_Points
    // with random vector data
-   int i, j, n = 20;
+   int i, j, n = 20, n_query = 5, k = 5;
+   double range = 40;
    ap_Point data[n];
    int seed = time(NULL);
    srand(seed);
@@ -108,7 +109,6 @@ main() {
    ap_Tree *tree = build_tree( s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
 
    // Construct a set of query points
-   int n_query = 5;
    ap_Point query[n_query];
    for( i = 0; i < n_query; i++ ) {
       query[i].id = i + 1;
@@ -138,7 +138,6 @@ main() {
 
    // Perform a range search on the query
    printf("(* range search *)\n");
-   double range = 40;
    printf("range = %f;\n", range);
    ap_PointList *results[n_query];
    for( i = 0; i < n_query; i++ ) {
@@ -150,7 +149,7 @@ main() {
    // Dump the search results for Mathematica
    printf("(* query results *)\n");
    ap_PointList *index;
-   printf("results = {");
+   printf("rangeResults = {");
    for( i = 0; i < n_query; i++ ) {
       printf("{");
       for( index = results[i]; index != NULL; index = index->next ) {
@@ -166,6 +165,33 @@ main() {
    printf("};\n");
 #endif
 
+   // Perform a nearest neighbor search on the query
+   printf("(* nearest neighbor search *)\n");
+   printf("k = %d;\n", k);
+   for( i = 0; i < n_query; i++ ) {
+      free_list( results[i] );
+      results[i] = NULL;
+      nearest_search( tree, &query[i], k, &results[i], dist );
+   }
+
+#ifdef DEBUG
+   // Dump the search results for Mathematica
+   printf("(* query results *)\n");
+   printf("nearestNeighborResults = {");
+   for( i = 0; i < n_query; i++ ) {
+      printf("{");
+      for( index = results[i]; index != NULL; index = index->next ) {
+         printf("%d", index->p->id);
+         if( index->next != NULL )
+            printf(",");
+      }
+      if( i < n_query-1 )
+         printf("},");
+      else
+         printf("}");
+   }
+   printf("};\n");
+#endif
 
    /*
    // Copy s into t
