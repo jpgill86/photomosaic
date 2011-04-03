@@ -61,11 +61,11 @@ struct ap_Heap {
    int capacity;              /* number of items that can be stored before the arrays need to grow */
    int size;                  /* number of items in the heap */
    void **items;              /* array of items in heap */
-   double *keys;              /* array of item keys */
-   void *min_item;            /* the item with the minimum key */
-   double min_key;            /* the minimum key */
-   void *max_item;            /* the item with the maximum key */
-   double max_key;            /* the maximum key */
+   double *dists;             /* array of distances to query */
+   void *min_item;            /* the item with the minimum distance to query */
+   double min_dist;           /* the minimum distance to query */
+   void *max_item;            /* the item with the maximum distance to query*/
+   double max_dist;           /* the maximum distance to query */
 };
 
 ap_Tree* build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
