@@ -133,7 +133,6 @@ make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
    ap_Cluster *new_cluster = malloc( sizeof( ap_Cluster ) );
    assert( new_cluster );
    approx_1_median( set, &(new_cluster->centroid), dimensionality, dist );
-   //new_cluster->size = 0;
    new_cluster->radius = 0;
    new_cluster->members = NULL;
 
@@ -144,9 +143,7 @@ make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
    for( index = set; index != NULL; index = index->next ) {
       if( index->p != new_cluster->centroid ) {
          dist_centroid = dist( new_cluster->centroid, index->p );
-         //index->p->dist_centroid = dist_centroid;
          add_point( &(new_cluster->members), index->p, dist_centroid );
-         //new_cluster->size++;
          new_cluster->radius = fmax( new_cluster->radius, dist_centroid );
       }
    }

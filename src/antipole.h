@@ -32,7 +32,6 @@ typedef struct ap_Heap ap_Heap;
 struct ap_Point {
    int id;                    /* point id */
    void *vec;                 /* position vector */
-   //double dist_centroid;    /* distance to centroid of cluster */
    ap_PointList *ancestors;   /* list of all ancestors in tree */
 };
 
@@ -44,7 +43,6 @@ struct ap_PointList {
 
 struct ap_Cluster {
    ap_Point *centroid;        /* geometric median of cluster */
-   //int size;                /* number of points in cluster */
    double radius;             /* distance from centroid to farthest point in cluster */
    ap_PointList *members;     /* list of points in cluster */
 };
