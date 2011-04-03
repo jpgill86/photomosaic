@@ -920,6 +920,8 @@ nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_
    }
 
    *out = heap_to_list( point_pq );
+   free_heap( tree_pq );
+   free_heap( point_pq );
 }
 
 

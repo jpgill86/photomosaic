@@ -321,6 +321,28 @@ main() {
    }
    */
 
+   /*
+   // Test for mem leaks in range_search
+   for( i = 0; i < 2e6; i++ ) {
+      for( j = 0; j < n_query; j++ ) {
+         free_list( results[j] );
+         results[j] = NULL;
+         range_search( tree, &query[j], range, &results[j], dist );
+      }
+   }
+   */
+
+   /*
+   // Test for mem leaks in nearest_search
+   for( i = 0; i < 1e6; i++ ) {
+      for( j = 0; j < n_query; j++ ) {
+         free_list( results[j] );
+         results[j] = NULL;
+         nearest_search( tree, &query[j], k, &results[j], dist );
+      }
+   }
+   */
+
    return 0;
 }
 
