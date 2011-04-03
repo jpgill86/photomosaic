@@ -246,6 +246,20 @@ main() {
    }
    */
 
+   /*
+   // Test for mem leaks in heap_insert, heap_remove, and
+   // free_heap
+   ap_Heap *heap = NULL;
+   for( i = 0; i < 2e7; i++ ) {
+      for( j = 0; j < n; j++ )
+         heap_insert( &heap, &data[j], dist( &query[0], &data[j] ) );
+      while( heap->size > n/2 )
+         heap_remove( heap, heap->max_item );
+      free_heap( heap );
+      heap = NULL;
+   }
+   */
+
    return 0;
 }
 

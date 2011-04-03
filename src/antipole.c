@@ -118,21 +118,6 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
 }
 
 
-// Recursively free up memory used by an ap_Tree.
-void
-free_tree( ap_Tree *tree ) {
-   if( tree != NULL ) {
-      if( tree->is_leaf ) {
-         free_cluster( tree->cluster );
-      } else {
-         free_tree( tree->left );
-         free_tree( tree->right );
-      }
-      free( tree );
-   }
-}
-
-
 // Create an ap_Cluster owned by a leaf of the tree data
 // structure containing a list of the points in the cluster
 // (already determined to be sufficiently close to one
@@ -167,16 +152,6 @@ make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
    }
 
    return new_cluster;
-}
-
-
-// Recursively free up memory used by an ap_Cluster.
-void
-free_cluster( ap_Cluster *cluster ) {
-   if( cluster != NULL ) {
-      free_list( cluster->members );
-      free( cluster );
-   }
 }
 
 
@@ -232,18 +207,19 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
       i++;
    }
 
-   // Continue if p was found
-   if( index != NULL ) {
-      // Remove index from *from
-      if( i == 0 )
-         *from = index->next;
-      else
-         before->next = index->next;
+   // Return if p was not found
+   if( index == NULL )
+      return;
 
-      // Prepend index to *to
-      index->next = *to;
-      *to = index;
-   }
+   // Remove index from *from
+   if( i == 0 )
+      *from = index->next;
+   else
+      before->next = index->next;
+
+   // Prepend index to *to
+   index->next = *to;
+   *to = index;
 }
 
 
@@ -264,10 +240,14 @@ move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    // Find the n-th ap_PointList, and store the link preceding
    // it for later user
-   for( i = 0; i < n; i++ ) {
+   for( i = 0; i < n && index != NULL; i++ ) {
       before = index;
       index = index->next;
    }
+
+   // Return if n was too large
+   if( index == NULL )
+      return;
 
    // Remove index from *from
    if( n == 0 )
@@ -294,18 +274,6 @@ copy_list( ap_PointList *set ) {
 }
 
 
-// Recursively free up memory used by an ap_PointList linked
-// list.
-void
-free_list( ap_PointList *set ) {
-
-   if( set != NULL ) {
-      free_list( set->next );
-      free( set );
-   }
-}
-
-
 // Find the size of a set of points
 int
 list_size( ap_PointList *set ) {
@@ -319,8 +287,183 @@ list_size( ap_PointList *set ) {
 }
 
 
+// Add an item to an ap_Heap with a key used for sorting
+// (the heap is a min-heap). Sorting is done automatically.
+// Requires an address of an ap_Heap pointer so that the
+// heap can be initialized if necessary. The ap_Heap
+// pointer should be set to NULL before calling this
+// function if the ap_Heap is not initialized.
+void heap_insert( ap_Heap **heap, void *item, double key ) {
+
+   int i, parent;
+   ap_Heap *h = *heap;
+
+   // Initialize the heap if necessary
+   if( h == NULL ) {
+      *heap = malloc( sizeof( ap_Heap ) );
+      h = *heap;
+      h->capacity = 10;
+      h->size = 0;
+      h->items = calloc( h->capacity, sizeof( void* ) );
+      h->keys = calloc( h->capacity, sizeof( double ) );
+      h->max_item = NULL;
+      h->max_key = -1;
+   }
+
+   // Grow the arrays if necessary
+   if( h->size == h->capacity ) {
+      h->capacity *= 2;
+      void **temp_items = calloc( h->capacity, sizeof( void* ) );
+      double *temp_keys = calloc( h->capacity, sizeof( double ) );
+      for( i = 0; i < h->size; i++ ) {
+         temp_items[ i ] = h->items[ i ];
+         temp_keys[ i ] = h->keys[ i ];
+      }
+      free( h->items );
+      free( h->keys );
+      h->items = temp_items;
+      h->keys = temp_keys;
+   }
+
+   // Insert the new item at the end of the array
+   i = h->size;
+   h->items[ i ] = item;
+   h->keys[ i ] = key;
+   h->size++;
+
+   // Percolate the new item upward
+   while( i > 0 ) {
+      parent = ( i - 1 ) / 2;
+      if( h->keys[ i ] < h->keys[ parent ] ) {
+         h->items[ i ] = h->items[ parent ];
+         h->keys[ i ] = h->keys[ parent ];
+         h->items[ parent ] = item;
+         h->keys[ parent ] = key;
+         i = parent;
+      } else {
+         break;
+      }
+   }
+
+   // Update max_item and max_key if necessary
+   if( key > h->max_key ) {
+      h->max_item = item;
+      h->max_key = key;
+   }
+}
+
+
+// Remove an item from the ap_Heap. Sorting is done
+// automatically.
+void heap_remove( ap_Heap *heap, void *item ) {
+
+   int i, left, right, smallest;
+   void *temp_item;
+   double temp_key;
+
+   // Find the item in the heap
+   for( i = 0; i < heap->size; i++ ) {
+      if( heap->items[ i ] == item ) {
+         break;
+      }
+   }
+
+   // Return if the item was not found
+   if( heap->items[ i ] != item )
+      return;
+
+   // Replace the item with the last item in the list
+   heap->items[ i ] = heap->items[ heap->size - 1 ];
+   heap->keys[ i ] = heap->keys[ heap->size - 1 ];
+   heap->size--;
+
+   // Percolate the moved item downward
+   while( i < heap->size - 1 ) {
+      left = 2 * i + 1;
+      right = 2 * i + 2;
+      smallest = i;
+      if( left < heap->size && heap->keys[ left ] < heap->keys[ smallest ] )
+         smallest = left;
+      if( right < heap->size && heap->keys[ right ] < heap->keys[ smallest ] )
+         smallest = right;
+      if( smallest != i ) {
+         temp_item = heap->items[ i ];
+         temp_key = heap->keys[ i ];
+         heap->items[ i ] = heap->items[ smallest ];
+         heap->keys[ i ] = heap->keys[ smallest ];
+         heap->items[ smallest ] = temp_item;
+         heap->keys[ smallest ] = temp_key;
+         i = smallest;
+      } else {
+         break;
+      }
+   }
+
+   // Update max_item and max_key if necessary
+   if( item == heap->max_item ) {
+      heap->max_item = NULL;
+      heap->max_key = -1;
+      for( i = 0; i < heap->size; i++ ) {
+         if( heap->keys[ i ] > heap->max_key ) {
+            heap->max_item = heap->items[ i ];
+            heap->max_key = heap->keys[ i ];
+         }
+      }
+   }
+}
+
+
+// Recursively free up memory used by an ap_Tree.
+void
+free_tree( ap_Tree *tree ) {
+
+   if( tree != NULL ) {
+      if( tree->is_leaf ) {
+         free_cluster( tree->cluster );
+      } else {
+         free_tree( tree->left );
+         free_tree( tree->right );
+      }
+      free( tree );
+   }
+}
+
+
+// Free up memory used by an ap_Cluster.
+void
+free_cluster( ap_Cluster *cluster ) {
+
+   if( cluster != NULL ) {
+      free_list( cluster->members );
+      free( cluster );
+   }
+}
+
+
+// Recursively free up memory used by an ap_PointList.
+void
+free_list( ap_PointList *set ) {
+
+   if( set != NULL ) {
+      free_list( set->next );
+      free( set );
+   }
+}
+
+
+// Free up memory used by an ap_Heap.
+void free_heap( ap_Heap *heap ) {
+
+   if( heap != NULL ) {
+      free( heap->items );
+      free( heap->keys );
+      free( heap );
+   }
+}
+
+
 // Find the exact geometric median of a set of points and
-// store it in median
+// store it in median.
 void
 exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC ) {
 

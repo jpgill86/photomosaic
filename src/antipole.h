@@ -27,6 +27,7 @@ typedef struct ap_Point ap_Point;
 typedef struct ap_PointList ap_PointList;
 typedef struct ap_Cluster ap_Cluster;
 typedef struct ap_Tree ap_Tree;
+typedef struct ap_Heap ap_Heap;
 
 struct ap_Point {
    int id;                    /* point id */
@@ -56,17 +57,31 @@ struct ap_Tree {
    ap_Cluster *cluster;       /* if leaf, pointer to cluster */
 };
 
+struct ap_Heap {
+   int capacity;              /* number of items that can be stored before the arrays need to grow */
+   int size;                  /* number of items in the heap */
+   void **items;              /* array of items in heap */
+   double *keys;              /* array of item keys */
+   void *max_item;            /* the item with the maximum key */
+   double max_key;            /* the maximum key */
+};
+
 ap_Tree* build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
-void free_tree( ap_Tree *tree );
 ap_Cluster* make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC );
-void free_cluster( ap_Cluster *cluster );
 
 void add_point( ap_PointList **set, ap_Point *p, double dist );
 void move_point( ap_Point *p, ap_PointList **from, ap_PointList **to );
 void move_nth_point( int n, ap_PointList **from, ap_PointList **to );
 ap_PointList* copy_list( ap_PointList *set );
-void free_list( ap_PointList *set );
 int list_size( ap_PointList *set );
+
+void heap_insert( ap_Heap **heap, void *item, double key );
+void heap_remove( ap_Heap *heap, void *item );
+
+void free_tree( ap_Tree *tree );
+void free_cluster( ap_Cluster *cluster );
+void free_list( ap_PointList *set );
+void free_heap( ap_Heap *heap );
 
 void exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC );
 void approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC );
