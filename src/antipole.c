@@ -331,7 +331,7 @@ void heap_insert( ap_Heap **heap, void *item, double key ) {
    h->keys[ i ] = key;
    h->size++;
 
-   // Percolate the new item upward
+   // Percolate the new item upward if necessary
    while( i > 0 ) {
       parent = ( i - 1 ) / 2;
       if( h->keys[ i ] < h->keys[ parent ] ) {
@@ -357,7 +357,7 @@ void heap_insert( ap_Heap **heap, void *item, double key ) {
 // automatically.
 void heap_remove( ap_Heap *heap, void *item ) {
 
-   int i, left, right, smallest;
+   int i, parent, left, right, smallest;
    void *temp_item;
    double temp_key;
 
@@ -377,7 +377,23 @@ void heap_remove( ap_Heap *heap, void *item ) {
    heap->keys[ i ] = heap->keys[ heap->size - 1 ];
    heap->size--;
 
-   // Percolate the moved item downward
+   // Percolate the moved item upward if necessary
+   while( i > 0 ) {
+      parent = ( i - 1 ) / 2;
+      if( heap->keys[ i ] < heap->keys[ parent ] ) {
+         temp_item = heap->items[ i ];
+         temp_key = heap->keys[ i ];
+         heap->items[ i ] = heap->items[ parent ];
+         heap->keys[ i ] = heap->keys[ parent ];
+         heap->items[ parent ] = temp_item;
+         heap->keys[ parent ] = temp_key;
+         i = parent;
+      } else {
+         break;
+      }
+   }
+
+   // Percolate the moved item downward if necessary
    while( i < heap->size - 1 ) {
       left = 2 * i + 1;
       right = 2 * i + 2;
@@ -410,6 +426,39 @@ void heap_remove( ap_Heap *heap, void *item ) {
          }
       }
    }
+}
+
+
+// Create an ap_PointList from an ap_Heap. The points in the
+// list will be sorted by dist in ascending order. This
+// function assumes the items in the heap are ap_Points.
+ap_PointList*
+heap_to_list( ap_Heap *heap ) {
+
+   int i;
+
+   // Create a copy of the heap
+   ap_Heap *new_heap = malloc( sizeof( ap_Heap ) );
+   new_heap->capacity = heap->capacity;
+   new_heap->size = heap->size;
+   new_heap->items = calloc( new_heap->capacity, sizeof( void* ) );
+   new_heap->keys = calloc( new_heap->capacity, sizeof( double ) );
+   for( i = 0; i < heap->size; i++ ) {
+      new_heap->items[ i ] = heap->items[ i ];
+      new_heap->keys[ i ] = heap->keys[ i ];
+   }
+   new_heap->max_item = heap->max_item;
+   new_heap->max_key = heap->max_key;
+
+   // Copy the points from the heap into a list
+   ap_PointList *new_list = NULL;
+   while( new_heap->size > 0 ) {
+      add_point( &new_list, (ap_Point*)new_heap->max_item, new_heap->max_key );
+      heap_remove( new_heap, new_heap->max_item );
+   }
+   free_heap( new_heap );
+
+   return new_list;
 }
 
 

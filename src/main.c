@@ -192,6 +192,31 @@ main() {
    }
    */
 
+   /*
+   // Check for sane heap behavior
+   ap_Heap *heap = NULL;
+   for( i = 0; i < n; i++ )
+      heap_insert( &heap, &data[i], dist( &query[0], &data[i] ) );
+   printf("\n");
+   for( i = 0; i < heap->size; i++ )
+      printf("h id=%d dist=%f\n", ((ap_Point*)heap->items[i])->id, heap->keys[i]);
+   printf("\n");
+   while( heap->size > 5 ) {
+      printf("r id=%d dist=%f\n", ((ap_Point*)heap->max_item)->id, heap->max_key);
+      heap_remove( heap, heap->max_item );
+   }
+   printf("\n");
+   for( i = 0; i < heap->size; i++ )
+      printf("h id=%d dist=%f\n", ((ap_Point*)heap->items[i])->id, heap->keys[i]);
+   printf("\n");
+   ap_PointList *v = heap_to_list( heap );
+   index = v;
+   while( index != NULL ) {
+      printf("l id=%d dist=%f\n", index->p->id, index->dist);
+      index = index->next;
+   }
+   */
+
 
    /*
    // Test for mem leaks in exact_1_median
@@ -251,12 +276,22 @@ main() {
    // free_heap
    ap_Heap *heap = NULL;
    for( i = 0; i < 2e7; i++ ) {
+      free_heap( heap );
+      heap = NULL;
       for( j = 0; j < n; j++ )
          heap_insert( &heap, &data[j], dist( &query[0], &data[j] ) );
       while( heap->size > n/2 )
          heap_remove( heap, heap->max_item );
-      free_heap( heap );
-      heap = NULL;
+   }
+   */
+
+   /*
+   // Test for mem leaks in heap_to_list
+   ap_Heap *heap = NULL;
+   for( i = 0; i < n; i++ )
+      heap_insert( &heap, &data[i], dist( &query[0], &data[i] ) );
+   for( i = 0; i < 2e6; i++ ) {
+      free_list( heap_to_list( heap ) );
    }
    */
 

@@ -77,6 +77,7 @@ int list_size( ap_PointList *set );
 
 void heap_insert( ap_Heap **heap, void *item, double key );
 void heap_remove( ap_Heap *heap, void *item );
+ap_PointList* heap_to_list( ap_Heap *heap );
 
 void free_tree( ap_Tree *tree );
 void free_cluster( ap_Cluster *cluster );
