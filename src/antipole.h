@@ -60,7 +60,7 @@ struct ap_Tree {
 struct ap_Heap {
    int capacity;              /* number of items that can be stored before the arrays need to grow */
    int size;                  /* number of items in the heap */
-   void **items;              /* array of items in heap */
+   void **items;              /* array of items in heap, either *ap_Points or *ap_Trees */
    double *dists;             /* array of distances to query */
    void *min_item;            /* the item with the minimum distance to query */
    double min_dist;           /* the minimum distance to query */
@@ -95,11 +95,11 @@ void adapted_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Poin
 void check_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b );
 
 void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
-void range_visit_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
+void range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
 
-void nearest_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
-void nearest_visit_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
-double nearest_check( ap_Point *p, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
+void nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
+void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
+double nearest_neighbor_search_try_point( ap_Point *p, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
 
 #endif /* ANTIPOLE_H */
 

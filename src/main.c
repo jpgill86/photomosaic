@@ -49,9 +49,15 @@ main() {
 
    // Create and initialize an array of ap_Points
    // with random vector data
-   int i, j, n = 20, n_query = 5, k = 5;
-   double range = 40;
+   int i, j, n = 20, n_query = 10, k = 5;
+   int domain = 256;
+   double range = (double)domain * 0.1;
    ap_Point data[n];
+   ap_Point query[n_query];
+   ap_PointList *results[n_query];
+#ifdef DEBUG
+   ap_PointList *index;
+#endif
    int seed = time(NULL);
    srand(seed);
    printf("dim = %d;\n", DIM);
@@ -63,6 +69,7 @@ main() {
       data[i].ancestors = NULL;
       for( j = 0; j < DIM; j++ )
          ((VEC_TYPE*)data[i].vec)[j] = rand() % 256;
+         //((VEC_TYPE*)data[i].vec)[j] = (double)rand() / (double)RAND_MAX;
    }
 
 #ifdef DEBUG
@@ -72,6 +79,7 @@ main() {
       printf("{");
       for( j = 0; j < DIM; j++ ) {
          printf("%d", ((VEC_TYPE*)data[i].vec)[j]);
+         //printf("%f", ((VEC_TYPE*)data[i].vec)[j]);
          if( j < DIM-1 )
             printf(",");
       }
@@ -106,16 +114,16 @@ main() {
 
    // Construct a tree
    printf("(* build tree *)\n");
-   ap_Tree *tree = build_tree( s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+   ap_Tree *tree = build_tree( s, domain*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
 
    // Construct a set of query points
-   ap_Point query[n_query];
    for( i = 0; i < n_query; i++ ) {
       query[i].id = i + 1;
       query[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
       query[i].ancestors = NULL;
       for( j = 0; j < DIM; j++ )
          ((VEC_TYPE*)query[i].vec)[j] = rand() % 256;
+         //((VEC_TYPE*)query[i].vec)[j] = (double)rand() / (double)RAND_MAX;
    }
 
 #ifdef DEBUG
@@ -125,6 +133,7 @@ main() {
       printf("{");
       for( j = 0; j < DIM; j++ ) {
          printf("%d", ((VEC_TYPE*)query[i].vec)[j]);
+         //printf("%f", ((VEC_TYPE*)query[i].vec)[j]);
          if( j < DIM-1 )
             printf(",");
       }
@@ -139,7 +148,6 @@ main() {
    // Perform a range search on the query
    printf("(* range search *)\n");
    printf("range = %f;\n", range);
-   ap_PointList *results[n_query];
    for( i = 0; i < n_query; i++ ) {
       results[i] = NULL;
       range_search( tree, &query[i], range, &results[i], dist );
@@ -148,7 +156,6 @@ main() {
 #ifdef DEBUG
    // Dump the search results for Mathematica
    printf("(* query results *)\n");
-   ap_PointList *index;
    printf("rangeResults = {");
    for( i = 0; i < n_query; i++ ) {
       printf("{");
@@ -171,7 +178,7 @@ main() {
    for( i = 0; i < n_query; i++ ) {
       free_list( results[i] );
       results[i] = NULL;
-      nearest_search( tree, &query[i], k, &results[i], dist );
+      nearest_neighbor_search( tree, &query[i], k, &results[i], dist );
    }
 
 #ifdef DEBUG
@@ -273,7 +280,7 @@ main() {
    // free_tree, and free_cluster
    for( i = 0; i < 1e6; i++ ) {
       free_tree( tree );
-      tree = build_tree( s, 256*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+      tree = build_tree( s, domain*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
    }
    */
 
@@ -333,12 +340,12 @@ main() {
    */
 
    /*
-   // Test for mem leaks in nearest_search
-   for( i = 0; i < 1e6; i++ ) {
+   // Test for mem leaks in nearest_neighbor_search
+   for( i = 0; i < 2e6; i++ ) {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;
-         nearest_search( tree, &query[j], k, &results[j], dist );
+         nearest_neighbor_search( tree, &query[j], k, &results[j], dist );
       }
    }
    */
