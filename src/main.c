@@ -28,6 +28,13 @@
 
 const int DIM = 2;         /* dimensionality of the mean RGB data */
 typedef uint8_t VEC_TYPE;  /* data type of the mean RGB data */
+#define PCS "%d"           /* the data type printf conversion specifier */
+#define VEC_DOMAIN 256     /* the range over which the data can fall */
+#define RAND_DATA rand()%VEC_DOMAIN  /* macro for generating random numbers of the right type */
+//typedef double VEC_TYPE;
+//#define PCS "%f"
+//#define VEC_DOMAIN 1.0
+//#define RAND_DATA VEC_DOMAIN*(double)rand()/(double)RAND_MAX
 
 // Calculate the Euclidian distance between two points
 double
@@ -47,43 +54,51 @@ main() {
 
    printf("(* ----- PHOTOMOSAIC ----- *)\n");
 
-   // Create and initialize an array of ap_Points
-   // with random vector data
-   int i, j, n = 20, n_query = 10, k = 5;
-   int domain = 256;
-   double range = (double)domain * 0.1;
-   ap_Point data[n];
-   ap_Point query[n_query];
-   ap_PointList *results[n_query];
-#ifdef DEBUG
-   ap_PointList *index;
-#endif
+   int i, j;
+   int n_data = 20, n_query = 10, n_neighbor = 5;
+   double bounded_radius = VEC_DOMAIN * 0.05 * sqrt(DIM);
+   double range = VEC_DOMAIN * 0.1;
    int seed = time(NULL);
    srand(seed);
+
+   ap_Point *data[n_data];
+   ap_Point *query[n_query];
+   ap_PointList *results[n_query];
+   ap_PointList *s;
+   ap_Tree *tree;
+
+   printf("(* parameters *)\n");
    printf("dim = %d;\n", DIM);
-   printf("n = %d;\n", n);
+   printf("nData = %d;\n", n_data);
+   printf("nQuery = %d;\n", n_query);
+   printf("nNeighbor = %d;\n", n_neighbor);
+   printf("domain = %f;\n", (double)VEC_DOMAIN);
+   printf("range = %f;\n", range);
    printf("seed = %d;\n", seed);
-   for( i = 0; i < n; i++ ) {
-      data[i].id = i + 1;
-      data[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
-      data[i].ancestors = NULL;
+
+   // Create a random data array
+   printf("(* creating data points... ");
+   for( i = 0; i < n_data; i++ ) {
+      data[i] = malloc( sizeof( ap_Point ) );
+      data[i]->id = i + 1;
+      data[i]->vec = calloc( DIM, sizeof( VEC_TYPE ) );
+      data[i]->ancestors = NULL;
       for( j = 0; j < DIM; j++ )
-         ((VEC_TYPE*)data[i].vec)[j] = rand() % 256;
-         //((VEC_TYPE*)data[i].vec)[j] = (double)rand() / (double)RAND_MAX;
+         ((VEC_TYPE*)data[i]->vec)[j] = RAND_DATA;
    }
+   printf("done *)\n");
 
 #ifdef DEBUG
    // Dump the data vectors for Mathematica
    printf("data = {");
-   for( i = 0; i < n; i++ ) {
+   for( i = 0; i < n_data; i++ ) {
       printf("{");
       for( j = 0; j < DIM; j++ ) {
-         printf("%d", ((VEC_TYPE*)data[i].vec)[j]);
-         //printf("%f", ((VEC_TYPE*)data[i].vec)[j]);
+         printf(PCS, ((VEC_TYPE*)data[i]->vec)[j]);
          if( j < DIM-1 )
             printf(",");
       }
-      if( i < n-1 )
+      if( i < n_data-1 )
          printf("},");
       else
          printf("}");
@@ -92,9 +107,11 @@ main() {
 #endif
 
    // Place the ap_Points in an ap_PointList
-   ap_PointList *s = NULL;
-   for( i = 0; i < n; i++ )
-      add_point( &s, &data[i], 0 );
+   s = NULL;
+   printf("(* creating data set from points... ");
+   for( i = 0; i < n_data; i++ )
+      add_point( &s, data[i], 0 );
+   printf("done *)\n");
 
    /*
    // Find the 1-median
@@ -113,18 +130,21 @@ main() {
    */
 
    // Construct a tree
-   printf("(* build tree *)\n");
-   ap_Tree *tree = build_tree( s, domain*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+   printf("(* building tree... *)\n");
+   tree = build_tree( s, bounded_radius, NULL, NULL, DIM, dist );
+   printf("(* ... done *)\n");
 
    // Construct a set of query points
+   printf("(* creating query points... ");
    for( i = 0; i < n_query; i++ ) {
-      query[i].id = i + 1;
-      query[i].vec = calloc( DIM, sizeof( VEC_TYPE ) );
-      query[i].ancestors = NULL;
+      query[i] = malloc( sizeof( ap_Point ) );
+      query[i]->id = i + 1;
+      query[i]->vec = calloc( DIM, sizeof( VEC_TYPE ) );
+      query[i]->ancestors = NULL;
       for( j = 0; j < DIM; j++ )
-         ((VEC_TYPE*)query[i].vec)[j] = rand() % 256;
-         //((VEC_TYPE*)query[i].vec)[j] = (double)rand() / (double)RAND_MAX;
+         ((VEC_TYPE*)query[i]->vec)[j] = RAND_DATA;
    }
+   printf("done *)\n");
 
 #ifdef DEBUG
    // Dump the query vectors for Mathematica
@@ -132,8 +152,7 @@ main() {
    for( i = 0; i < n_query; i++ ) {
       printf("{");
       for( j = 0; j < DIM; j++ ) {
-         printf("%d", ((VEC_TYPE*)query[i].vec)[j]);
-         //printf("%f", ((VEC_TYPE*)query[i].vec)[j]);
+         printf(PCS, ((VEC_TYPE*)query[i]->vec)[j]);
          if( j < DIM-1 )
             printf(",");
       }
@@ -146,17 +165,17 @@ main() {
 #endif
 
    // Perform a range search on the query
-   printf("(* range search *)\n");
-   printf("range = %f;\n", range);
+   printf("(* performing range search... ");
    for( i = 0; i < n_query; i++ ) {
       results[i] = NULL;
-      range_search( tree, &query[i], range, &results[i], dist );
+      range_search( tree, query[i], range, &results[i], dist );
    }
+   printf("done *)\n");
 
 #ifdef DEBUG
-   // Dump the search results for Mathematica
-   printf("(* query results *)\n");
+   // Dump the range search results for Mathematica
    printf("rangeResults = {");
+   ap_PointList *index;
    for( i = 0; i < n_query; i++ ) {
       printf("{");
       for( index = results[i]; index != NULL; index = index->next ) {
@@ -173,17 +192,16 @@ main() {
 #endif
 
    // Perform a nearest neighbor search on the query
-   printf("(* nearest neighbor search *)\n");
-   printf("k = %d;\n", k);
+   printf("(* performing nearest neighbor search... ");
    for( i = 0; i < n_query; i++ ) {
       free_list( results[i] );
       results[i] = NULL;
-      nearest_neighbor_search( tree, &query[i], k, &results[i], dist );
+      nearest_neighbor_search( tree, query[i], n_neighbor, &results[i], dist );
    }
+   printf("done *)\n");
 
 #ifdef DEBUG
-   // Dump the search results for Mathematica
-   printf("(* query results *)\n");
+   // Dump the nearest neighbor search results for Mathematica
    printf("nearestNeighborResults = {");
    for( i = 0; i < n_query; i++ ) {
       printf("{");
@@ -201,52 +219,27 @@ main() {
 #endif
 
    /*
-   // Copy s into t
-   ap_PointList *t = copy_list( s );
-   ap_PointList *i0 = s, *j0 = t;
-
-   // Move members of t into u
-   printf("members of t:\n");
-   i0 = t;
-   while( i0 != NULL ) {
-      printf("(* i0 = %p *)\n", i0);
-      i0 = i0->next;
-   }
-   printf("moving members of t into u\n", i);
-   ap_PointList *u = NULL;
-   while( list_size(t) > 0 ) {
-      move_point( 0, &t, &u );
-   }
-   printf("members of u:\n");
-   i0 = u;
-   while( i0 != NULL ) {
-      printf("(* i0 = %p *)\n", i0);
-      i0 = i0->next;
-   }
-   */
-
-   /*
    // Check for sane heap behavior
    ap_Heap *heap = NULL;
-   for( i = 0; i < n; i++ )
-      heap_insert( &heap, &data[i], dist( &query[0], &data[i] ) );
+   for( i = 0; i < n_data; i++ )
+      heap_insert( &heap, data[i], dist( query[0], data[i] ) );
    printf("\n");
    for( i = 0; i < heap->size; i++ )
-      printf("h id=%d dist=%f\n", ((ap_Point*)heap->items[i])->id, heap->keys[i]);
+      printf("(* h id=%d dist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
    printf("\n");
-   while( heap->size > 5 ) {
-      printf("r id=%d dist=%f\n", ((ap_Point*)heap->max_item)->id, heap->max_key);
+   while( heap->size > n_neighbor ) {
+      printf("(* r id=%d dist=%f *)\n", ((ap_Point*)heap->max_item)->id, heap->max_dist);
       heap_remove( heap, heap->max_item );
    }
    printf("\n");
    for( i = 0; i < heap->size; i++ )
-      printf("h id=%d dist=%f\n", ((ap_Point*)heap->items[i])->id, heap->keys[i]);
+      printf("(* h id=%d dist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
    printf("\n");
    ap_PointList *v = heap_to_list( heap );
-   index = v;
-   while( index != NULL ) {
-      printf("l id=%d dist=%f\n", index->p->id, index->dist);
-      index = index->next;
+   ap_PointList *v_index = v;
+   while( v_index != NULL ) {
+      printf("(* l id=%d dist=%f *)\n", v_index->p->id, v_index->dist);
+      v_index = v_index->next;
    }
    */
 
@@ -260,7 +253,7 @@ main() {
    /*
    // Test for mem leaks in approx_1_median
    for( i = 0; i < 1e7; i++ )
-      approx_1_median( s, &median, dist );
+      approx_1_median( s, &median, DIM, dist );
    */
 
    /*
@@ -272,7 +265,13 @@ main() {
    /*
    // Test for mem leaks in approx_antipoles
    for( i = 0; i < 1e7; i++ )
-      approx_antipoles( s, &antipole_a, &antipole_b, dist );
+      approx_antipoles( s, &antipole_a, &antipole_b, DIM, dist );
+   */
+
+   /*
+   // Test for mem leaks in adapted_approx_antipoles
+   for( i = 0; i < 2e8; i++ )
+      adapted_approx_antipoles( s, &antipole_a, &antipole_b, bounded_radius, dist );
    */
 
    /*
@@ -280,7 +279,7 @@ main() {
    // free_tree, and free_cluster
    for( i = 0; i < 1e6; i++ ) {
       free_tree( tree );
-      tree = build_tree( s, domain*0.05*sqrt(DIM), NULL, NULL, DIM, dist );
+      tree = build_tree( s, bounded_radius, NULL, NULL, DIM, dist );
    }
    */
 
@@ -289,18 +288,20 @@ main() {
    for( i = 0; i < 1e7; i++ ) {
       free_list(s);
       s = NULL;
-      for( j = 0; j < n; j++ )
-         add_point( &s, &data[j], 0 );
+      for( j = 0; j < n_data; j++ )
+         add_point( &s, data[j], 0 );
    }
    */
 
    /*
-   // Test for mem leaks in list_size and move_point
+   // Test for mem leaks in list_size, move_point, and
+   // move_nth_point
+   ap_PointList *t = NULL;
    for( i = 0; i < 1e7; i++ ) {
-      while( list_size(s) > 0 )
-         move_point( 0, &s, &t );
+      while( s != NULL )
+         move_nth_point( 0, &s, &t );
       while( list_size(t) > 0 )
-         move_point( 0, &t, &s );
+         move_point( t->p, &t, &s );
    }
    */
 
@@ -311,9 +312,9 @@ main() {
    for( i = 0; i < 2e7; i++ ) {
       free_heap( heap );
       heap = NULL;
-      for( j = 0; j < n; j++ )
-         heap_insert( &heap, &data[j], dist( &query[0], &data[j] ) );
-      while( heap->size > n/2 )
+      for( j = 0; j < n_data; j++ )
+         heap_insert( &heap, data[j], dist( query[0], data[j] ) );
+      while( heap->size > n_neighbor )
          heap_remove( heap, heap->max_item );
    }
    */
@@ -321,8 +322,8 @@ main() {
    /*
    // Test for mem leaks in heap_to_list
    ap_Heap *heap = NULL;
-   for( i = 0; i < n; i++ )
-      heap_insert( &heap, &data[i], dist( &query[0], &data[i] ) );
+   for( i = 0; i < n_data; i++ )
+      heap_insert( &heap, data[i], dist( query[0], data[i] ) );
    for( i = 0; i < 2e6; i++ ) {
       free_list( heap_to_list( heap ) );
    }
@@ -334,7 +335,7 @@ main() {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;
-         range_search( tree, &query[j], range, &results[j], dist );
+         range_search( tree, query[j], range, &results[j], dist );
       }
    }
    */
@@ -345,11 +346,12 @@ main() {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;
-         nearest_neighbor_search( tree, &query[j], k, &results[j], dist );
+         nearest_neighbor_search( tree, query[j], n_neighbor, &results[j], dist );
       }
    }
    */
 
+   printf("(* ----------------------- *)\n");
    return 0;
 }
 

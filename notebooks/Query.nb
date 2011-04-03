@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[      6725,        200]
-NotebookOptionsPosition[      6029,        175]
-NotebookOutlinePosition[      6366,        190]
-CellTagsIndexPosition[      6323,        187]
+NotebookDataLength[      6850,        202]
+NotebookOptionsPosition[      6154,        177]
+NotebookOutlinePosition[      6491,        192]
+CellTagsIndexPosition[      6448,        189]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -121,8 +121,10 @@ Cell[BoxData["nearestNeighborResults"], "Input",
 Cell[BoxData[
  RowBox[{"knn", "=", 
   RowBox[{"nearestNeighborSearch", "[", 
-   RowBox[{"data", ",", "query", ",", "k"}], "]"}]}]], "Input",
- CellChangeTimes->{{3.510796047883111*^9, 3.510796064162169*^9}}],
+   RowBox[{"data", ",", "query", ",", "nNeighbor"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.510796047883111*^9, 3.510796064162169*^9}, {
+  3.510856974196393*^9, 3.5108569766106367`*^9}, {3.510857027815853*^9, 
+  3.510857028282197*^9}}],
 
 Cell[BoxData[
  RowBox[{"nearestNeighborResults", "===", "knn"}]], "Input",
@@ -135,8 +137,7 @@ Cell[BoxData[{
  RowBox[{"For", "[", 
   RowBox[{
    RowBox[{"i", "=", "1"}], ",", 
-   RowBox[{"i", "\[LessEqual]", 
-    RowBox[{"Length", "[", "query", "]"}]}], ",", 
+   RowBox[{"i", "\[LessEqual]", "nQuery"}], ",", 
    RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
    RowBox[{
     RowBox[{"d1", "=", 
@@ -171,7 +172,8 @@ Cell[BoxData[{
        RowBox[{"d1", "===", "d2"}], ")"}]}]}]}]}], 
   "]"}], "\[IndentingNewLine]", "foo"}], "Input",
  CellChangeTimes->{{3.5107993992711973`*^9, 3.510799576574864*^9}, {
-  3.510799851008627*^9, 3.510799904355838*^9}}]
+  3.510799851008627*^9, 3.510799904355838*^9}, {3.510857032961989*^9, 
+  3.5108570367768173`*^9}}]
 },
 WindowSize->{811, 625},
 WindowMargins->{{Automatic, 38}, {Automatic, 70}},
@@ -199,9 +201,9 @@ Cell[2680, 84, 592, 9, 32, "Input"],
 Cell[3275, 95, 92, 1, 32, "Input"],
 Cell[3370, 98, 716, 17, 55, "Input"],
 Cell[4089, 117, 116, 1, 32, "Input"],
-Cell[4208, 120, 206, 4, 32, "Input"],
-Cell[4417, 126, 164, 3, 32, "Input"],
-Cell[4584, 131, 1441, 42, 143, "Input"]
+Cell[4208, 120, 314, 6, 32, "Input"],
+Cell[4525, 128, 164, 3, 32, "Input"],
+Cell[4692, 133, 1458, 42, 143, "Input"]
 }
 ]
 *)

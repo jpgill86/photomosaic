@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[      5169,        122]
-NotebookOptionsPosition[      4635,        102]
-NotebookOutlinePosition[      5185,        122]
-CellTagsIndexPosition[      5142,        119]
+NotebookDataLength[      5387,        129]
+NotebookOptionsPosition[      4853,        109]
+NotebookOutlinePosition[      5403,        129]
+CellTagsIndexPosition[      5360,        126]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -63,7 +63,13 @@ Cell[BoxData[{
   ";"}], "\[IndentingNewLine]", 
  RowBox[{"Show", "[", 
   RowBox[{"p1", ",", "p2", ",", 
-   RowBox[{"PlotRange", "\[Rule]", "All"}], ",", 
+   RowBox[{"PlotRange", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "domain"}], "}"}], ",", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", "domain"}], "}"}]}], "}"}]}], ",", 
    RowBox[{"PlotRangeClipping", "\[Rule]", "False"}], ",", 
    RowBox[{"AspectRatio", "\[Rule]", "1"}], ",", 
    RowBox[{"AxesOrigin", "\[Rule]", 
@@ -98,7 +104,8 @@ Cell[BoxData[{
    3.51059120206553*^9, 3.5105914210388203`*^9}, {3.510591554018821*^9, 
    3.510591591749542*^9}, {3.510591702241837*^9, 3.510591714220083*^9}, {
    3.510591755814529*^9, 3.510591757812388*^9}, {3.510592014642454*^9, 
-   3.510592069700901*^9}, {3.510592143611506*^9, 3.510592184185701*^9}}]
+   3.510592069700901*^9}, {3.510592143611506*^9, 3.510592184185701*^9}, {
+   3.510857521805615*^9, 3.51085753168988*^9}}]
 },
 WindowSize->{861, 640},
 WindowMargins->{{Automatic, 142}, {52, Automatic}},
@@ -123,7 +130,7 @@ CellTagsIndex->{}
 Notebook[{
 Cell[545, 20, 131, 2, 32, "Input"],
 Cell[679, 24, 466, 8, 32, "Input"],
-Cell[1148, 34, 3483, 66, 143, "Input"]
+Cell[1148, 34, 3701, 73, 143, "Input"]
 }
 ]
 *)
