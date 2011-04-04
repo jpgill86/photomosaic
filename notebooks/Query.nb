@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[      6850,        202]
-NotebookOptionsPosition[      6154,        177]
-NotebookOutlinePosition[      6491,        192]
-CellTagsIndexPosition[      6448,        189]
+NotebookDataLength[      6171,        180]
+NotebookOptionsPosition[      5436,        154]
+NotebookOutlinePosition[      5773,        169]
+CellTagsIndexPosition[      5730,        166]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -47,9 +47,6 @@ Cell[BoxData[
  CellChangeTimes->{{3.510577480609625*^9, 3.510577581421596*^9}, {
   3.510583792639699*^9, 3.5105837996516113`*^9}}],
 
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.510796793191338*^9, 3.5107968175339518`*^9}}],
-
 Cell[BoxData[
  RowBox[{
   RowBox[{"rangeSearch", "[", 
@@ -72,31 +69,6 @@ Cell[BoxData[
   3.510796875065564*^9}}],
 
 Cell[BoxData[
- RowBox[{"rangeResults", "=", 
-  RowBox[{"Sort", "/@", "rangeResults"}]}]], "Input",
- CellChangeTimes->{{3.510795103334292*^9, 3.5107951078878*^9}}],
-
-Cell[BoxData[
- RowBox[{"r", "=", 
-  RowBox[{"rangeSearch", "[", 
-   RowBox[{"data", ",", "query", ",", "range"}], "]"}]}]], "Input",
- CellChangeTimes->{{3.510602641403322*^9, 3.5106026415729513`*^9}}],
-
-Cell[BoxData[
- RowBox[{"rangeResults", "===", "r"}]], "Input",
- CellChangeTimes->{{3.510577447285159*^9, 3.510577449937283*^9}, {
-   3.510578006555497*^9, 3.510578032258505*^9}, {3.510578999152183*^9, 
-   3.510579010062263*^9}, {3.510579111102882*^9, 3.5105791191068*^9}, {
-   3.510583673198731*^9, 3.510583702875312*^9}, {3.510584587061438*^9, 
-   3.510584587188158*^9}, {3.5105846180617113`*^9, 3.510584627829402*^9}, {
-   3.510587788278532*^9, 3.510587790181744*^9}, {3.510600545138596*^9, 
-   3.510600549147316*^9}, 3.510602647119008*^9, {3.510795116465981*^9, 
-   3.510795118999094*^9}}],
-
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.510796790520691*^9, 3.510796815995723*^9}}],
-
-Cell[BoxData[
  RowBox[{
   RowBox[{"nearestNeighborSearch", "[", 
    RowBox[{"data_", ",", "query_", ",", "k_"}], "]"}], ":=", 
@@ -115,6 +87,38 @@ Cell[BoxData[
   3.510795951497731*^9, 3.510795959753241*^9}, {3.5107959943292418`*^9, 
   3.5107960264263144`*^9}}],
 
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"resultDistances", "[", 
+   RowBox[{"data_", ",", "query_", ",", "results_"}], "]"}], ":=", 
+  RowBox[{"Diagonal", "[", 
+   RowBox[{"N", "[", 
+    RowBox[{"Outer", "[", 
+     RowBox[{"dist", ",", "query", ",", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"data", "[", 
+         RowBox[{"[", "#", "]"}], "]"}], "&"}], "/@", "results"}], ",", "1", 
+      ",", "2"}], "]"}], "]"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.510881606574688*^9, 3.510881648056281*^9}}],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.5108818012651167`*^9, 3.510881831039219*^9}}],
+
+Cell[BoxData[
+ RowBox[{"rangeResults", "=", 
+  RowBox[{"Sort", "/@", "rangeResults"}]}]], "Input",
+ CellChangeTimes->{{3.510881833197011*^9, 3.5108818683960743`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"r", "=", 
+  RowBox[{"rangeSearch", "[", 
+   RowBox[{"data", ",", "query", ",", "range"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.510602641403322*^9, 3.5106026415729513`*^9}}],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.510796790520691*^9, 3.510796815995723*^9}}],
+
 Cell[BoxData["nearestNeighborResults"], "Input",
  CellChangeTimes->{{3.510795533343437*^9, 3.5107955636256237`*^9}}],
 
@@ -126,54 +130,27 @@ Cell[BoxData[
   3.510856974196393*^9, 3.5108569766106367`*^9}, {3.510857027815853*^9, 
   3.510857028282197*^9}}],
 
-Cell[BoxData[
- RowBox[{"nearestNeighborResults", "===", "knn"}]], "Input",
- CellChangeTimes->{{3.5107960695844*^9, 3.510796079771346*^9}, 
-   3.510798500611265*^9}],
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.510881930678523*^9, 3.510881931039955*^9}}],
 
-Cell[BoxData[{
+Cell[BoxData[
+ RowBox[{"rangeResults", "===", "r"}]], "Input",
+ CellChangeTimes->{{3.510577447285159*^9, 3.510577449937283*^9}, {
+   3.510578006555497*^9, 3.510578032258505*^9}, {3.510578999152183*^9, 
+   3.510579010062263*^9}, {3.510579111102882*^9, 3.5105791191068*^9}, {
+   3.510583673198731*^9, 3.510583702875312*^9}, {3.510584587061438*^9, 
+   3.510584587188158*^9}, {3.5105846180617113`*^9, 3.510584627829402*^9}, {
+   3.510587788278532*^9, 3.510587790181744*^9}, {3.510600545138596*^9, 
+   3.510600549147316*^9}, 3.510602647119008*^9, {3.510795116465981*^9, 
+   3.510795118999094*^9}}],
+
+Cell[BoxData[
  RowBox[{
-  RowBox[{"foo", "=", "True"}], ";"}], "\[IndentingNewLine]", 
- RowBox[{"For", "[", 
-  RowBox[{
-   RowBox[{"i", "=", "1"}], ",", 
-   RowBox[{"i", "\[LessEqual]", "nQuery"}], ",", 
-   RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
-   RowBox[{
-    RowBox[{"d1", "=", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"N", "[", 
-        RowBox[{"dist", "[", 
-         RowBox[{
-          RowBox[{"query", "[", 
-           RowBox[{"[", "i", "]"}], "]"}], ",", "#"}], "]"}], "]"}], "&"}], "/@", 
-      RowBox[{"data", "[", 
-       RowBox[{"[", 
-        RowBox[{"nearestNeighborResults", "[", 
-         RowBox[{"[", "i", "]"}], "]"}], "]"}], "]"}]}]}], ";", 
-    "\[IndentingNewLine]", 
-    RowBox[{"d2", "=", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"N", "[", 
-        RowBox[{"dist", "[", 
-         RowBox[{
-          RowBox[{"query", "[", 
-           RowBox[{"[", "i", "]"}], "]"}], ",", "#"}], "]"}], "]"}], "&"}], "/@", 
-      RowBox[{"data", "[", 
-       RowBox[{"[", 
-        RowBox[{"knn", "[", 
-         RowBox[{"[", "i", "]"}], "]"}], "]"}], "]"}]}]}], ";", 
-    "\[IndentingNewLine]", 
-    RowBox[{"foo", "=", 
-     RowBox[{"foo", "&&", 
-      RowBox[{"(", 
-       RowBox[{"d1", "===", "d2"}], ")"}]}]}]}]}], 
-  "]"}], "\[IndentingNewLine]", "foo"}], "Input",
- CellChangeTimes->{{3.5107993992711973`*^9, 3.510799576574864*^9}, {
-  3.510799851008627*^9, 3.510799904355838*^9}, {3.510857032961989*^9, 
-  3.5108570367768173`*^9}}]
+  RowBox[{"resultDistances", "[", 
+   RowBox[{"data", ",", "query", ",", "nearestNeighborResults"}], "]"}], "===", 
+  RowBox[{"resultDistances", "[", 
+   RowBox[{"data", ",", "query", ",", "knn"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.510881668741398*^9, 3.51088169928666*^9}}]
 },
 WindowSize->{811, 625},
 WindowMargins->{{Automatic, 38}, {Automatic, 70}},
@@ -193,17 +170,18 @@ CellTagsIndex->{}
 Notebook[{
 Cell[545, 20, 131, 2, 32, "Input"],
 Cell[679, 24, 740, 23, 32, "Input"],
-Cell[1422, 49, 94, 1, 32, "Input"],
-Cell[1519, 52, 790, 19, 55, "Input"],
-Cell[2312, 73, 162, 3, 32, "Input"],
-Cell[2477, 78, 200, 4, 32, "Input"],
-Cell[2680, 84, 592, 9, 32, "Input"],
-Cell[3275, 95, 92, 1, 32, "Input"],
-Cell[3370, 98, 716, 17, 55, "Input"],
-Cell[4089, 117, 116, 1, 32, "Input"],
-Cell[4208, 120, 314, 6, 32, "Input"],
-Cell[4525, 128, 164, 3, 32, "Input"],
-Cell[4692, 133, 1458, 42, 143, "Input"]
+Cell[1422, 49, 790, 19, 55, "Input"],
+Cell[2215, 70, 716, 17, 55, "Input"],
+Cell[2934, 89, 500, 13, 55, "Input"],
+Cell[3437, 104, 94, 1, 32, "Input"],
+Cell[3534, 107, 166, 3, 32, "Input"],
+Cell[3703, 112, 200, 4, 32, "Input"],
+Cell[3906, 118, 92, 1, 32, "Input"],
+Cell[4001, 121, 116, 1, 32, "Input"],
+Cell[4120, 124, 314, 6, 32, "Input"],
+Cell[4437, 132, 92, 1, 32, "Input"],
+Cell[4532, 135, 592, 9, 32, "Input"],
+Cell[5127, 146, 305, 6, 55, "Input"]
 }
 ]
 *)
