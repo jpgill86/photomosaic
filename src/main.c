@@ -331,7 +331,7 @@ main() {
 
    /*
    // Test for mem leaks in range_search
-   for( i = 0; i < 2e6; i++ ) {
+   for( i = 0; i < 1e6; i++ ) {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;
@@ -342,13 +342,87 @@ main() {
 
    /*
    // Test for mem leaks in nearest_neighbor_search
-   for( i = 0; i < 2e6; i++ ) {
+   for( i = 0; i < 1e6; i++ ) {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;
          nearest_neighbor_search( tree, query[j], n_neighbor, &results[j], dist );
       }
    }
+   */
+
+   /*
+   // Naive range search
+   printf("(* performing naive range search... ");
+   int k;
+   double d;
+   for( i = 0; i < 1e6; i++ ) {
+      for( j = 0; j < n_query; j++ ) {
+         free_list( results[j] );
+         results[j] = NULL;
+         for( k = 0; k < n_data; k++ ) {
+            d = dist( query[j], data[k] );
+            if( d <= range )
+               add_point( &results[j], data[k], d );
+         }
+      }
+   }
+   printf("done *)\n");
+
+#ifdef DEBUG
+   // Dump the naive range search results for Mathematica
+   printf("naiveRangeResults = {");
+   for( i = 0; i < n_query; i++ ) {
+      printf("{");
+      for( index = results[i]; index != NULL; index = index->next ) {
+         printf("%d", index->p->id);
+         if( index->next != NULL )
+            printf(",");
+      }
+      if( i < n_query-1 )
+         printf("},");
+      else
+         printf("}");
+   }
+   printf("};\n");
+#endif
+   */
+
+   /*
+   // Naive nearest neighbor search
+   printf("(* performing naive nearest neighbor search... ");
+   int k;
+   ap_Heap *point_pq = NULL;
+   for( i = 0; i < 1e6; i++ ) {
+      for( j = 0; j < n_query; j++ ) {
+         free_list( results[j] );
+         results[j] = NULL;
+         free_heap( point_pq );
+         point_pq = NULL;
+         for( k = 0; k < n_data; k++ )
+            nearest_neighbor_search_try_point( data[k], query[j], n_neighbor, &point_pq, dist );
+         results[j] = heap_to_list( point_pq );
+      }
+   }
+   printf("done *)\n");
+
+#ifdef DEBUG
+   // Dump the naive nearest neighbor search results for Mathematica
+   printf("naiveNearestNeighborResults = {");
+   for( i = 0; i < n_query; i++ ) {
+      printf("{");
+      for( index = results[i]; index != NULL; index = index->next ) {
+         printf("%d", index->p->id);
+         if( index->next != NULL )
+            printf(",");
+      }
+      if( i < n_query-1 )
+         printf("},");
+      else
+         printf("}");
+   }
+   printf("};\n");
+#endif
    */
 
    printf("(* ----------------------- *)\n");
