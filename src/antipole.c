@@ -159,15 +159,16 @@ make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
 // be given a new first member. The ap_PointList pointer
 // should be set to NULL before calling this function if the
 // list is empty; otherwise the list may not terminate
-// properly.
-void
+// properly. Returns 1 if the point was added or 0 if it was
+// not due to lack of uniqueness.
+int
 add_point( ap_PointList **set, ap_Point *p, double dist ) {
 
    // Check for uniqueness
    ap_PointList *index = *set;
    while( index != NULL ) {
       if( index->p == p )
-         return;
+         return 0;
       index = index->next;
    }
 
@@ -178,6 +179,8 @@ add_point( ap_PointList **set, ap_Point *p, double dist ) {
    new_list_member->dist = dist;
    new_list_member->next = *set;
    *set = new_list_member;
+
+   return 1;
 }
 
 
@@ -189,8 +192,9 @@ add_point( ap_PointList **set, ap_Point *p, double dist ) {
 // member can become the new first member. The ap_PointList
 // pointer *to should be set to NULL before calling this
 // function if the list is empty; otherwise the list may not
-// terminate properly.
-void
+// terminate properly. Returns 1 if the point was moved or 0
+// if it was not found
+int
 move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 
    int i = 0;
@@ -206,7 +210,7 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 
    // Return if p was not found
    if( index == NULL )
-      return;
+      return 0;
 
    // Remove index from *from
    if( i == 0 )
@@ -217,6 +221,8 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
    // Prepend index to *to
    index->next = *to;
    *to = index;
+
+   return 1;
 }
 
 
@@ -228,8 +234,9 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 // member can become the new first member. The ap_PointList
 // pointer *to should be set to NULL before calling this
 // function if the list is empty; otherwise the list may not
-// terminate properly.
-void
+// terminate properly. Returns 1 if the point was moved or 0
+// if n was too large.
+int
 move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    int i;
@@ -244,7 +251,7 @@ move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    // Return if n was too large
    if( index == NULL )
-      return;
+      return 0;
 
    // Remove index from *from
    if( n == 0 )
@@ -255,6 +262,8 @@ move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
    // Prepend index to *to
    index->next = *to;
    *to = index;
+
+   return 1;
 }
 
 
@@ -289,8 +298,10 @@ list_size( ap_PointList *set ) {
 // automatically. Requires an address of an ap_Heap pointer
 // so that the heap can be initialized if necessary. The
 // ap_Heap pointer should be set to NULL before calling this
-// function if the ap_Heap is not initialized.
-void heap_insert( ap_Heap **heap, void *item, double dist ) {
+// function if the ap_Heap is not initialized. Returns 1 if
+// the item was inserted.
+int
+heap_insert( ap_Heap **heap, void *item, double dist ) {
 
    int i, parent;
 
@@ -355,12 +366,16 @@ void heap_insert( ap_Heap **heap, void *item, double dist ) {
       (*heap)->max_item = item;
       (*heap)->max_dist = dist;
    }
+
+   return 1;
 }
 
 
 // Remove an item from the ap_Heap. Sorting is done
-// automatically.
-void heap_remove( ap_Heap *heap, void *item ) {
+// automatically. Returns 1 if the item was removed or 0 if
+// it was not found.
+int
+heap_remove( ap_Heap *heap, void *item ) {
 
    int i, parent, left, right, smallest;
    void *temp_item;
@@ -375,7 +390,7 @@ void heap_remove( ap_Heap *heap, void *item ) {
 
    // Return if the item was not found
    if( heap->items[i] != item )
-      return;
+      return 0;
 
    // Replace the item with the last item in the list
    heap->items[i] = heap->items[heap->size-1];
@@ -448,6 +463,8 @@ void heap_remove( ap_Heap *heap, void *item ) {
          }
       }
    }
+
+   return 1;
 }
 
 
@@ -769,8 +786,8 @@ range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, 
       double dist_a = dist( tree->a, query );
       double dist_b = dist( tree->b, query );
       /*
-      add_point( &(query->ancestors), tree->a, dist_a );
-      add_point( &(query->ancestors), tree->b, dist_b );
+      int a_added = add_point( &(query->ancestors), tree->a, dist_a );
+      int b_added = add_point( &(query->ancestors), tree->b, dist_b );
       */
 
       // If either antipole is within range, add it to out
@@ -787,13 +804,18 @@ range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, 
       if( dist_b <= range + tree->radius_b )
          range_search( tree->right, query, range, out, dist );
 
+      /*
       // Once the search has returned from both subtrees, remove
-      // the antipoles of tree from the ancestor list for query,
-      // since they will no longer be relevant to further searches
+      // the antipoles of tree from the ancestor list for query if
+      // they were not ancestors in subtrees above this one, since
+      // they will no longer be relevant to further searches
       ap_PointList *trash = NULL;
-      move_point( tree->a, &(query->ancestors), &trash );
-      move_point( tree->b, &(query->ancestors), &trash );
+      if( b_added )
+         move_nth_point( 0, &(query->ancestors), &trash );
+      if( a_added )
+         move_nth_point( 0, &(query->ancestors), &trash );
       free_list( trash );
+      */
    } else {
       // If tree is a leaf, search its cluster for points within
       // range of query
@@ -854,25 +876,27 @@ range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_Poi
       /*
       // Check the ancestors of the query and the member of the
       // cluster
-      for( query_ancestors = query->ancestors; query_ancestors != NULL; query_ancestors = query_ancestors->next ) {
-         for( cluster_ancestors = index->p->ancestors; cluster_ancestors != NULL; cluster_ancestors = cluster_ancestors->next ) {
-            if( query_ancestors->p == cluster_ancestors->p ) {
+      query_ancestors = query->ancestors;
+      cluster_ancestors = index->p->ancestors;
+      while( query_ancestors != NULL ) {
+         assert( query_ancestors->p == cluster_ancestors->p );
 
-               // Use the triangle inequality with the cluster member's
-               // distance to ancestor to determine if the point is
-               // definitely out of range
-               if( query_ancestors->dist > range + cluster_ancestors->dist )
-                  goto next_cluster_member;
+         // Use the triangle inequality with the cluster member's
+         // distance to ancestor to determine if the point is
+         // definitely out of range
+         if( query_ancestors->dist > range + cluster_ancestors->dist )
+            goto next_cluster_member;
 
-               // Use the triangle inequality with the cluster member's
-               // distance to ancestor to determine if the point is
-               // definitely within range
-               if( query_ancestors->dist <= range - cluster_ancestors->dist ) {
-                  add_point( out, index->p, -1 );
-                  goto next_cluster_member;
-               }
-            }
+         // Use the triangle inequality with the cluster member's
+         // distance to ancestor to determine if the point is
+         // definitely within range
+         if( query_ancestors->dist <= range - cluster_ancestors->dist ) {
+            add_point( out, index->p, -1 );
+            goto next_cluster_member;
          }
+
+         query_ancestors = query_ancestors->next;
+         cluster_ancestors = cluster_ancestors->next;
       }
       */
 

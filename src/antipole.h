@@ -69,14 +69,14 @@ struct ap_Heap {
 ap_Tree* build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
 ap_Cluster* make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC );
 
-void add_point( ap_PointList **set, ap_Point *p, double dist );
-void move_point( ap_Point *p, ap_PointList **from, ap_PointList **to );
-void move_nth_point( int n, ap_PointList **from, ap_PointList **to );
+int add_point( ap_PointList **set, ap_Point *p, double dist );
+int move_point( ap_Point *p, ap_PointList **from, ap_PointList **to );
+int move_nth_point( int n, ap_PointList **from, ap_PointList **to );
 ap_PointList* copy_list( ap_PointList *set );
 int list_size( ap_PointList *set );
 
-void heap_insert( ap_Heap **heap, void *item, double key );
-void heap_remove( ap_Heap *heap, void *item );
+int heap_insert( ap_Heap **heap, void *item, double key );
+int heap_remove( ap_Heap *heap, void *item );
 ap_PointList* heap_to_list( ap_Heap *heap );
 
 void free_tree( ap_Tree *tree );
