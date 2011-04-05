@@ -355,7 +355,7 @@ heap_insert( ap_Heap **heap, void *item, double dist ) {
       }
    }
 
-   // Update max_item and max_dist if necessary
+   // Update min_item and min_dist if necessary
    if( (*heap)->min_dist == -1 || dist < (*heap)->min_dist ) {
       (*heap)->min_item = item;
       (*heap)->min_dist = dist;
