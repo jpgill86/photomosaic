@@ -456,7 +456,7 @@ heap_remove( ap_Heap *heap, void *item ) {
    if( item == heap->max_item ) {
       heap->max_item = NULL;
       heap->max_dist = -1;
-      for( i = 0; i < heap->size; i++ ) {
+      for( i = heap->size / 2; i < heap->size; i++ ) {
          if( heap->dists[i] > heap->max_dist ) {
             heap->max_item = heap->items[i];
             heap->max_dist = heap->dists[i];
