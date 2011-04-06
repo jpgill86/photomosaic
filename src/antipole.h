@@ -65,7 +65,19 @@ struct ap_Heap {
 };
 
 ap_Tree* build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
-ap_Cluster* make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC );
+ap_Cluster* build_cluster( ap_PointList *set, int dimensionality, DIST_FUNC );
+
+void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
+void range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
+void nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
+void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap *point_pq, DIST_FUNC );
+
+void exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC );
+void approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC );
+void exact_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC );
+void approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC );
+void first_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC );
+void check_ancestors_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b );
 
 int add_point( ap_PointList **set, ap_Point *p, double dist );
 int move_point( ap_Point *p, ap_PointList **from, ap_PointList **to );
@@ -86,20 +98,6 @@ void free_tree( ap_Tree *tree );
 void free_cluster( ap_Cluster *cluster );
 void free_list( ap_PointList *set );
 void free_heap( ap_Heap *heap );
-
-void exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC );
-void approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC );
-
-void exact_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC );
-void approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC );
-void adapted_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC );
-void check_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b );
-
-void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
-void range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
-
-void nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
-void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap *point_pq, DIST_FUNC );
 
 #endif /* ANTIPOLE_H */
 

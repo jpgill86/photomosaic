@@ -27,6 +27,12 @@
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+               TREE CONSTRUCTION FUNCTIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
 // Create an ap_Tree that serves as the root, an internal
 // node, or a leaf for the tree data structure. Non-leaves
 // contain the identities of two antipole points, a left
@@ -54,12 +60,12 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
 
    // Determine if this tree is an internal node or a leaf
    if( antipole_a == NULL || antipole_b == NULL ) {
-      adapted_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
+      first_approx_antipoles( set, &antipole_a, &antipole_b, target_radius, dist );
       if( antipole_a == NULL || antipole_b == NULL ) {
          // If it is a leaf, create a cluster from the set and return
          // the leaf
          new_tree->is_leaf = 1;
-         new_tree->cluster = make_cluster( set, dimensionality, dist );
+         new_tree->cluster = build_cluster( set, dimensionality, dist );
 #ifdef DEBUG
          depth--;
 #endif
@@ -80,26 +86,27 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
    // nearest antipole, and update the radius of the subset if
    // necessary
    double dist_a, dist_b;
-   ap_PointList *index, *set_a = NULL, *set_b = NULL;
-   for( index = set; index != NULL; index = index->next ) {
-      dist_a = dist( new_tree->a, index->p );
-      dist_b = dist( new_tree->b, index->p );
-      add_point( &(index->p->ancestors), new_tree->a, dist_a );
-      add_point( &(index->p->ancestors), new_tree->b, dist_b );
+   ap_PointList *set_a = NULL, *set_b = NULL;
+   while( set != NULL ) {
+      dist_a = dist( new_tree->a, set->p );
+      dist_b = dist( new_tree->b, set->p );
+      add_point( &(set->p->ancestors), new_tree->a, dist_a );
+      add_point( &(set->p->ancestors), new_tree->b, dist_b );
       if( dist_a < dist_b ) {
-         add_point( &set_a, index->p, dist_a );
+         add_point( &set_a, set->p, dist_a );
          new_tree->radius_a = fmax( dist_a, new_tree->radius_a );
       } else {
-         add_point( &set_b, index->p, dist_b );
+         add_point( &set_b, set->p, dist_b );
          new_tree->radius_b = fmax( dist_b, new_tree->radius_b );
       }
+      set = set->next;
    }
 
    // Build subtrees as children for this node using the two
    // point subsets
-   check_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
+   check_ancestors_for_antipoles( set_a, target_radius, new_tree->a, &antipole_a, &antipole_b );
    new_tree->left = build_tree( set_a, target_radius, antipole_a, antipole_b, dimensionality, dist );
-   check_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
+   check_ancestors_for_antipoles( set_b, target_radius, new_tree->b, &antipole_a, &antipole_b );
    new_tree->right = build_tree( set_b, target_radius, antipole_a, antipole_b, dimensionality, dist );
 
 #ifdef DEBUG
@@ -124,9 +131,8 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
 // another to group together), the identity of the geometric
 // median of the cluster, and the cluster radius.
 ap_Cluster*
-make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
+build_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
 
-   ap_PointList *index;
    double dist_centroid;
 
    // Create the new ap_Cluster and initialize it
@@ -140,687 +146,22 @@ make_cluster( ap_PointList *set, int dimensionality, DIST_FUNC ) {
    // the distance to the centroid, add the point to the list
    // of points in the cluster, and update the radius of the
    // cluster if necessary
-   for( index = set; index != NULL; index = index->next ) {
-      if( index->p != new_cluster->centroid ) {
-         dist_centroid = dist( new_cluster->centroid, index->p );
-         add_point( &(new_cluster->members), index->p, dist_centroid );
+   while( set != NULL ) {
+      if( set->p != new_cluster->centroid ) {
+         dist_centroid = dist( new_cluster->centroid, set->p );
+         add_point( &(new_cluster->members), set->p, dist_centroid );
          new_cluster->radius = fmax( new_cluster->radius, dist_centroid );
       }
+      set = set->next;
    }
 
    return new_cluster;
 }
 
 
-// Prepend to an ap_PointList an ap_Point with a distance
-// value (to an ancestor, cluster centroid, or query,
-// depending on the use of the ap_PointList). Requires the
-// address of an ap_PointList pointer so that the list can
-// be given a new first member. The ap_PointList pointer
-// should be set to NULL before calling this function if the
-// list is empty; otherwise the list may not terminate
-// properly. Returns 1 if the point was added or 0 if it was
-// not due to lack of uniqueness.
-int
-add_point( ap_PointList **set, ap_Point *p, double dist ) {
-
-   // Check for uniqueness
-   ap_PointList *index = *set;
-   while( index != NULL ) {
-      if( index->p == p )
-         return 0;
-      index = index->next;
-   }
-
-   // Add the point if it is unique to the list
-   ap_PointList *new_list_member = malloc( sizeof( ap_PointList ) );
-   assert( new_list_member );
-   new_list_member->p = p;
-   new_list_member->dist = dist;
-   new_list_member->next = *set;
-   *set = new_list_member;
-
-   return 1;
-}
-
-
-// Move the first instance of point p found in the
-// ap_PointList *from into the ap_PointList *to. Requires
-// the addresses of the ap_PointList pointers so that the
-// moved member can be prepended to *to, and so that if the
-// first member of ap_PointList *from is moved, the second
-// member can become the new first member. The ap_PointList
-// pointer *to should be set to NULL before calling this
-// function if the list is empty; otherwise the list may not
-// terminate properly. Returns 1 if the point was moved or 0
-// if it was not found
-int
-move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
-
-   int i = 0;
-   ap_PointList *before = NULL, *index = *from;
-
-   // Find the first ap_PointList containing p, and store the
-   // link preceding it for later user
-   while( index != NULL && index->p != p ) {
-      before = index;
-      index = index->next;
-      i++;
-   }
-
-   // Return if p was not found
-   if( index == NULL )
-      return 0;
-
-   // Remove index from *from
-   if( i == 0 )
-      *from = index->next;
-   else
-      before->next = index->next;
-
-   // Prepend index to *to
-   index->next = *to;
-   *to = index;
-
-   return 1;
-}
-
-
-// Move the n-th member (start counting at zero) of the
-// ap_PointList *from into the ap_PointList *to. Requires
-// the addresses of the ap_PointList pointers so that the
-// moved member can be prepended to *to, and so that if the
-// first member of ap_PointList *from is moved, the second
-// member can become the new first member. The ap_PointList
-// pointer *to should be set to NULL before calling this
-// function if the list is empty; otherwise the list may not
-// terminate properly. Returns 1 if the point was moved or 0
-// if n was too large.
-int
-move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
-
-   int i;
-   ap_PointList *before = NULL, *index = *from;
-
-   // Find the n-th ap_PointList, and store the link preceding
-   // it for later user
-   for( i = 0; i < n && index != NULL; i++ ) {
-      before = index;
-      index = index->next;
-   }
-
-   // Return if n was too large
-   if( index == NULL )
-      return 0;
-
-   // Remove index from *from
-   if( n == 0 )
-      *from = index->next;
-   else
-      before->next = index->next;
-
-   // Prepend index to *to
-   index->next = *to;
-   *to = index;
-
-   return 1;
-}
-
-
-// Create a new ap_PointList with the same contents as set.
-ap_PointList*
-copy_list( ap_PointList *set ) {
-
-   ap_PointList *index = set, *new_list = NULL;
-   while( index != NULL ) {
-      add_point( &new_list, index->p, index->dist );
-      index = index->next;
-   }
-   return new_list;
-}
-
-
-// Find the size of a set of points
-int
-list_size( ap_PointList *set ) {
-
-   int size = 0;
-   while( set != NULL ) {
-      size++;
-      set = set->next;
-   }
-   return size;
-}
-
-
-// Create a new ap_Heap object with a minimum capacity
-ap_Heap*
-create_heap( int capacity ) {
-
-   ap_Heap *heap = malloc( sizeof( ap_Heap ) );
-   assert( heap );
-   heap->capacity = max( capacity, 10 );
-   heap->size = 0;
-   heap->items = calloc( heap->capacity, sizeof( void* ) );
-   heap->dists = calloc( heap->capacity, sizeof( double ) );
-   assert( heap->items && heap->dists );
-   heap->max_index = -1;
-   heap->max_dist  = -1;
-
-   return heap;
-}
-
-
-// Increase the capacity of heap
-void
-heap_grow( ap_Heap *heap ) {
-
-   int i;
-   heap->capacity *= 2;
-   void **temp_items  = calloc( heap->capacity, sizeof( void* ) );
-   double *temp_dists = calloc( heap->capacity, sizeof( double ) );
-   assert( temp_items && temp_dists );
-
-   for( i = 0; i < heap->size; i++ ) {
-      temp_items[i] = heap->items[i];
-      temp_dists[i] = heap->dists[i];
-   }
-   free( heap->items );
-   free( heap->dists );
-   heap->items = temp_items;
-   heap->dists = temp_dists;
-}
-
-
-// Swap items at positions i and j in heap. Returns 1 if a
-// swap occurred or 0 if the indices were inapproriate
-int
-heap_swap( ap_Heap *heap, int i, int j ) {
-
-   // Return if the indices match or are out of bounds
-   if( i == j || i >= heap->size || j >= heap->size || i < 0 || j < 0 )
-      return 0;
-
-   void *temp_item  = heap->items[i];
-   double temp_dist = heap->dists[i];
-   heap->items[i] = heap->items[j];
-   heap->dists[i] = heap->dists[j];
-   heap->items[j] = temp_item;
-   heap->dists[j] = temp_dist;
-
-   return 1;
-}
-
-
-// Sift upward the item at position index in heap until it
-// is properly positioned (the heap is a min-heap).
-void
-heap_sift_up( ap_Heap* heap, int index ) {
-
-   // Return is index is the root
-   if( index == 0 )
-      return;
-
-   int parent = ( index - 1 ) / 2;
-
-   // If index has a smaller dist than its parent, swap them
-   // and continue sifting upward
-   if( heap->dists[index] < heap->dists[parent] ) {
-      heap_swap( heap, index, parent );
-      heap_sift_up( heap, parent );
-   }
-}
-
-
-// Sift downward the item at position index in heap until it
-// is properly positioned (the heap is a min-heap).
-void
-heap_sift_down( ap_Heap *heap, int index ) {
-
-   // Return if index is a leaf
-   if( index >= heap->size / 2 )
-      return;
-
-   int smallestChild;
-   int left = 2 * index + 1;
-   int right = 2 * index + 2;
-
-   // Find the smallest child of index
-   if( right >= heap->size ) {
-      smallestChild = left;
-   } else {
-      if( heap->dists[left] < heap->dists[right] )
-         smallestChild = left;
-      else
-         smallestChild = right;
-   }
-
-   // If index has a greater dist than one of its children,
-   // swap them and continue sifting downward
-   if( heap->dists[index] > heap->dists[smallestChild] ) {
-      heap_swap( heap, index, smallestChild );
-      heap_sift_down( heap, smallestChild );
-   }
-}
-
-
-// Attempt to add an item to an ap_Heap with a distance
-// value used for sorting (the heap is a min-heap). The item
-// will be inserted only if the heap has fewer items than
-// the specified limit, if a limit is not specified (use
-// limit < 1). The item will replace the max item in the
-// heap if the limit is reached and dist is smaller than
-// max_dist. Returns 1 if the item was inserted or 0 if the
-// heap was full or dist was too large.
-int
-heap_try_insert( ap_Heap *heap, int limit, void *item, double dist ) {
-
-   int i;
-
-   // Add the item to the heap if a limit is not given or the
-   // current heap size is smaller than the limit
-   if( limit < 1 || heap->size < limit ) {
-      
-      // Return if the item is already in the list
-      for( i = 0; i < heap->size; i++ )
-         if( item == heap->items[i] )
-            return 0;
-
-      // Grow the data arrays if necessary
-      if( heap->size == heap->capacity )
-         heap_grow( heap );
-
-      // Insert the new item at the end of the array
-      i = heap->size;
-      heap->items[i] = item;
-      heap->dists[i] = dist;
-      heap->size++;
-
-      // Update max_index and max_dist if the item is the new
-      // max item or sift it upward
-      if( dist > heap->max_dist ) {
-         heap->max_index = i;
-         heap->max_dist = dist;
-      } else {
-         heap_sift_up( heap, i );
-      }
-
-      return 1;
-   } else {
-
-      // If the current heap size is not smaller than the limit,
-      // add the item only if dist is smaller than max_dist
-      if( dist < heap->max_dist ) {
-
-         // Return if the item is already in the list
-         for( i = 0; i < heap->size; i++ )
-            if( item == heap->items[i] )
-               return 0;
-
-         // Replace the max item with the new item
-         i = heap->max_index;
-         heap->items[i] = item;
-         heap->dists[i] = dist;
-
-         // Sift the item upward
-         heap_sift_up( heap, i );
-
-         // Update max_index and max_dist
-         heap->max_index = -1;
-         heap->max_dist  = -1;
-         for( i = heap->size / 2; i < heap->size; i++ ) {
-            if( heap->dists[i] > heap->max_dist ) {
-               heap->max_index = i;
-               heap->max_dist = heap->dists[i];
-            }
-         }
-
-         return 1;
-      } else {
-
-         // Return if dist is not smaller than max_dist
-         return 0;
-      }
-   }
-}
-
-
-// Remove the first item in the heap and return a pointer to
-// it. Returns NULL if the heap is empty.
-void*
-heap_pop( ap_Heap *heap ) {
-
-   // Return if the heap is empty
-   if( heap->size == 0 )
-      return NULL;
-
-   void* min_item = heap->items[0];
-
-   // Replace the root with the last item in the list
-   heap->items[0] = heap->items[heap->size-1];
-   heap->dists[0] = heap->dists[heap->size-1];
-   heap->size--;
-
-   // Sift the new root downward
-   heap_sift_down( heap, 0 );
-
-   return min_item;
-}
-
-
-// Create an ap_PointList from an ap_Heap. The points in the
-// list will be sorted by dist in ascending order. This
-// function assumes the items in the heap are ap_Points.
-ap_PointList*
-heap_to_list( ap_Heap *heap ) {
-
-   int i, counter = 0;
-   ap_PointList *new_list = NULL;
-
-   // Create a copy of the heap (because it will be modified
-   // below)
-   ap_Heap *new_heap = malloc( sizeof( ap_Heap ) );
-   assert( new_heap );
-   new_heap->capacity = heap->capacity;
-   new_heap->size = heap->size;
-   new_heap->items = calloc( new_heap->capacity, sizeof( void* ) );
-   new_heap->dists = calloc( new_heap->capacity, sizeof( double ) );
-   assert( new_heap->items && new_heap->dists );
-   for( i = 0; i < heap->size; i++ ) {
-      new_heap->items[i] = heap->items[i];
-      new_heap->dists[i] = heap->dists[i];
-   }
-   new_heap->max_index = heap->max_index;
-   new_heap->max_dist = heap->max_dist;
-
-   // Sort the items in heap by dist in descending order
-   for( i = new_heap->size - 1; i > 0; i-- ) {
-      heap_swap( new_heap, 0, i );
-      new_heap->size--;
-      counter++;
-      heap_sift_down( new_heap, 0 );
-   }
-   new_heap->size += counter;
-
-   // Copy the points from the heap into a list
-   for( i = 0; i < new_heap->size; i++ ) {
-      add_point( &new_list, (ap_Point*)new_heap->items[i], new_heap->dists[i] );
-   }
-   free_heap( new_heap );
-
-   return new_list;
-}
-
-
-// Recursively free up memory used by an ap_Tree.
-void
-free_tree( ap_Tree *tree ) {
-
-   if( tree != NULL ) {
-      if( tree->is_leaf ) {
-         free_cluster( tree->cluster );
-      } else {
-         free_tree( tree->left );
-         free_tree( tree->right );
-      }
-      free( tree );
-   }
-}
-
-
-// Free up memory used by an ap_Cluster.
-void
-free_cluster( ap_Cluster *cluster ) {
-
-   if( cluster != NULL ) {
-      free_list( cluster->members );
-      free( cluster );
-   }
-}
-
-
-// Recursively free up memory used by an ap_PointList.
-void
-free_list( ap_PointList *set ) {
-
-   if( set != NULL ) {
-      free_list( set->next );
-      free( set );
-   }
-}
-
-
-// Free up memory used by an ap_Heap.
-void free_heap( ap_Heap *heap ) {
-
-   if( heap != NULL ) {
-      free( heap->items );
-      free( heap->dists );
-      free( heap );
-   }
-}
-
-
-// Find the exact geometric median of a set of points and
-// store it in median.
-void
-exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC ) {
-
-   *median = NULL;
-
-   int i, j, d, size = list_size( set );
-   ap_PointList *i_list, *j_list;
-
-   // Initialize the array of distance sums
-   double sums[size];
-   for( i = 0; i < size; i++ )
-      sums[i] = 0;
-
-   // Calculate the distance between each pair of points and
-   // add each distance to the distance sums for each point in
-   // the pair
-   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
-      for( j = i + 1, j_list = i_list->next; j < size; j++, j_list = j_list->next ) {
-         d = dist( i_list->p, j_list->p );
-         sums[i] += d;
-         sums[j] += d;
-      }
-   }
-
-   // Identify the point with the minimum distance sum and
-   // store it in median
-   double min_sum = -1;
-   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
-      if( sums[i] < min_sum || min_sum < 0 ) {
-         min_sum = sums[i];
-         *median = i_list->p;
-      }
-   }
-}
-
-
-// Find an approximation for the geometric median of a set
-// of points and store it in median. The user should
-// initialize the random number generator using srand.
-void
-approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC ) {
-
-   *median = NULL;
-
-   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
-   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
-
-   // Hold a series of rounds of tournaments
-   while( contestants_size > final_round_size ) {
-      // Find the winners that will continue to the next round
-      winners = NULL;
-      winners_size = 0;
-      while( contestants_size >= 2 * tournament_size ) {
-         tournament = NULL;
-         // Move tournament_size random members of contestants into
-         // tournament
-         for( i = 0; i < tournament_size; i++ ) {
-            move_nth_point( rand() % contestants_size, &contestants, &tournament );
-            contestants_size--;
-         }
-         // Find the winner of this tournament and discard the losers
-         exact_1_median( tournament, median, dist );
-         move_point( *median, &tournament, &winners );
-         winners_size++;
-         free_list( tournament );
-      }
-      // Find the winner among the remaining contestants and
-      // discard the losers
-      exact_1_median( contestants, median, dist );
-      move_point( *median, &contestants, &winners );
-      winners_size++;
-      free_list( contestants );
-
-      // Fill the pool of contestants with all the winners in
-      // preparation for the next round
-      contestants = winners;
-      contestants_size = winners_size;
-   }
-   
-   // Find the overall winner and discard the losers
-   exact_1_median( contestants, median, dist );
-   free_list( contestants );
-}
-
-
-// Find the two points in the set that are farthest from one
-// another and store them in antipole_a and antipole_b.
-void
-exact_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
-
-   *antipole_a = NULL;
-   *antipole_b = NULL;
-
-   ap_PointList *i_list, *j_list;
-   double d, max_dist = -1;
-
-   // Calculate the distance between each pair of points and
-   // if a distance is greater than any found yet, make the
-   // pair of points the new antipole pair
-   for( i_list = set; i_list != NULL; i_list = i_list->next ) {
-      for( j_list = i_list->next; j_list != NULL; j_list = j_list->next ) {
-         d = dist( i_list->p, j_list->p );
-         if( d > max_dist ) {
-            *antipole_a = i_list->p;
-            *antipole_b = j_list->p;
-            max_dist = d;
-         }
-      }
-   }
-}
-
-
-// Find an approximation for the antipole pair of a set
-// of points and store them in antipole_a and antipole_b.
-// The user should initialize the random number generator
-// using srand.
-void
-approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC ) {
-
-   *antipole_a = NULL;
-   *antipole_b = NULL;
-
-   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
-   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
-   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
-
-   // Hold a series of rounds of tournaments
-   while( contestants_size > final_round_size ) {
-      // Find the winners that will continue to the next round
-      winners = NULL;
-      winners_size = 0;
-      while( contestants_size >= 2 * tournament_size ) {
-         tournament = NULL;
-         // Move tournament_size random members of contestants into
-         // tournament
-         for( i = 0; i < tournament_size; i++ ) {
-            move_nth_point( rand() % contestants_size, &contestants, &tournament );
-            contestants_size--;
-         }
-         // Find the winners of this tournament and discard the losers
-         exact_antipoles( tournament, antipole_a, antipole_b, dist );
-         move_point( *antipole_a, &tournament, &winners );
-         move_point( *antipole_b, &tournament, &winners );
-         winners_size += 2;
-         free_list( tournament );
-      }
-      // Find the winners among the remaining contestants and
-      // discard the losers
-      exact_antipoles( contestants, antipole_a, antipole_b, dist );
-      move_point( *antipole_a, &contestants, &winners );
-      move_point( *antipole_b, &contestants, &winners );
-      winners_size += 2;
-      free_list( contestants );
-
-      // Fill the pool of contestants with all the winners in
-      // preparation for the next round
-      contestants = winners;
-      contestants_size = winners_size;
-   }
-   
-   // Find the overall winners and discard the losers
-   exact_antipoles( contestants, antipole_a, antipole_b, dist );
-   free_list( contestants );
-}
-
-
-// Search for any two points whose distance from
-// one another is greater than the target cluster
-// diameter
-void
-adapted_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
-
-   *antipole_a = NULL;
-   *antipole_b = NULL;
-
-   ap_PointList *i_list, *j_list;
-
-   // Calculate the distance between each pair of points and
-   // if a distance is greater than the target cluster diameter
-   // make the pair of points the new antipole pair and stop
-   // searching
-   for( i_list = set; i_list != NULL; i_list = i_list->next ) {
-      for( j_list = i_list->next; j_list != NULL; j_list = j_list->next ) {
-         if( dist( i_list->p, j_list->p ) > 2 * target_radius ) {
-            *antipole_a = i_list->p;
-            *antipole_b = j_list->p;
-            return;
-         }
-      }
-   }
-}
-
-
-// Search the set for a point that when paired with ancestor
-// could serve as an antipole pair.
-void
-check_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b ) {
-
-   *antipole_a = NULL;
-   *antipole_b = NULL;
-
-   // Search the set for a point whose distance to the ancestor
-   // is greater than 2*target_radius and save it and the
-   // ancestor as antipoles
-   ap_PointList *index_i, *index_j;
-   for( index_i = set; index_i != NULL; index_i = index_i->next ) {
-      for( index_j = index_i->p->ancestors; index_j != NULL; index_j = index_j->next ) {
-         if( index_j->p == ancestor ) {
-            if( index_j->dist > 2 * target_radius ) {
-               *antipole_a = ancestor;
-               *antipole_b = index_i->p;
-               return;
-            }
-         }
-      }
-   }
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                     SEARCH FUNCTIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 // Search the tree recursively to find all points within
@@ -987,7 +328,7 @@ nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **o
       if( point_pq->size == k && tree_pq->dists[0] > point_pq->max_dist )
          break;
 
-      // Pop off the next subtree in the tree priority queue
+      // Get the next subtree in the tree priority queue
       index = (ap_Tree*)heap_pop( tree_pq );
 
       if( !index->is_leaf ) {
@@ -1102,6 +443,740 @@ nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap
 
 next_cluster_member:
       index = index->next;
+   }
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+          GEOMETRIC MEDIAN AND ANTIPOLE FUNCTIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+// Find the exact geometric median of a set of points and
+// store it in median.
+void
+exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC ) {
+
+   *median = NULL;
+
+   int i, j, d, size = list_size( set );
+   ap_PointList *i_list, *j_list;
+
+   // Initialize the array of distance sums
+   double sums[size];
+   for( i = 0; i < size; i++ )
+      sums[i] = 0;
+
+   // Calculate the distance between each pair of points and
+   // add each distance to the distance sums for each point in
+   // the pair
+   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
+      for( j = i + 1, j_list = i_list->next; j < size; j++, j_list = j_list->next ) {
+         d = dist( i_list->p, j_list->p );
+         sums[i] += d;
+         sums[j] += d;
+      }
+   }
+
+   // Identify the point with the minimum distance sum and
+   // store it in median
+   double min_sum = -1;
+   for( i = 0, i_list = set; i < size; i++, i_list = i_list->next ) {
+      if( sums[i] < min_sum || min_sum < 0 ) {
+         min_sum = sums[i];
+         *median = i_list->p;
+      }
+   }
+}
+
+
+// Find an approximation for the geometric median of a set
+// of points and store it in median. The user should
+// initialize the random number generator using srand.
+void
+approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC ) {
+
+   *median = NULL;
+
+   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
+   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
+   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
+
+   // Hold a series of rounds of tournaments
+   while( contestants_size > final_round_size ) {
+      // Find the winners that will continue to the next round
+      winners = NULL;
+      winners_size = 0;
+      while( contestants_size >= 2 * tournament_size ) {
+         tournament = NULL;
+         // Move tournament_size random members of contestants into
+         // tournament
+         for( i = 0; i < tournament_size; i++ ) {
+            move_nth_point( rand() % contestants_size, &contestants, &tournament );
+            contestants_size--;
+         }
+         // Find the winner of this tournament and discard the losers
+         exact_1_median( tournament, median, dist );
+         move_point( *median, &tournament, &winners );
+         winners_size++;
+         free_list( tournament );
+      }
+      // Find the winner among the remaining contestants and
+      // discard the losers
+      exact_1_median( contestants, median, dist );
+      move_point( *median, &contestants, &winners );
+      winners_size++;
+      free_list( contestants );
+
+      // Fill the pool of contestants with all the winners in
+      // preparation for the next round
+      contestants = winners;
+      contestants_size = winners_size;
+   }
+   
+   // Find the overall winner and discard the losers
+   exact_1_median( contestants, median, dist );
+   free_list( contestants );
+}
+
+
+// Find the two points in the set that are farthest from one
+// another and store them in antipole_a and antipole_b.
+void
+exact_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, DIST_FUNC ) {
+
+   *antipole_a = NULL;
+   *antipole_b = NULL;
+
+   ap_PointList *i, *j;
+   double d, max_dist = -1;
+
+   // Calculate the distance between each pair of points and
+   // if a distance is greater than any found yet, make the
+   // pair of points the new antipole pair
+   for( i = set; i != NULL; i = i->next ) {
+      for( j = i->next; j != NULL; j = j->next ) {
+         d = dist( i->p, j->p );
+         if( d > max_dist ) {
+            *antipole_a = i->p;
+            *antipole_b = j->p;
+            max_dist = d;
+         }
+      }
+   }
+}
+
+
+// Find an approximation for the antipole pair of a set
+// of points and store them in antipole_a and antipole_b.
+// The user should initialize the random number generator
+// using srand.
+void
+approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, int dimensionality, DIST_FUNC ) {
+
+   *antipole_a = NULL;
+   *antipole_b = NULL;
+
+   ap_PointList *contestants = copy_list( set ), *tournament, *winners;
+   int i, contestants_size = list_size( contestants ), tournament_size = dimensionality + 1, winners_size;
+   int final_round_size = max( pow( tournament_size, 2 ) - 1, round( sqrt( list_size( set ) ) ) );
+
+   // Hold a series of rounds of tournaments
+   while( contestants_size > final_round_size ) {
+      // Find the winners that will continue to the next round
+      winners = NULL;
+      winners_size = 0;
+      while( contestants_size >= 2 * tournament_size ) {
+         tournament = NULL;
+         // Move tournament_size random members of contestants into
+         // tournament
+         for( i = 0; i < tournament_size; i++ ) {
+            move_nth_point( rand() % contestants_size, &contestants, &tournament );
+            contestants_size--;
+         }
+         // Find the winners of this tournament and discard the losers
+         exact_antipoles( tournament, antipole_a, antipole_b, dist );
+         move_point( *antipole_a, &tournament, &winners );
+         move_point( *antipole_b, &tournament, &winners );
+         winners_size += 2;
+         free_list( tournament );
+      }
+      // Find the winners among the remaining contestants and
+      // discard the losers
+      exact_antipoles( contestants, antipole_a, antipole_b, dist );
+      move_point( *antipole_a, &contestants, &winners );
+      move_point( *antipole_b, &contestants, &winners );
+      winners_size += 2;
+      free_list( contestants );
+
+      // Fill the pool of contestants with all the winners in
+      // preparation for the next round
+      contestants = winners;
+      contestants_size = winners_size;
+   }
+   
+   // Find the overall winners and discard the losers
+   exact_antipoles( contestants, antipole_a, antipole_b, dist );
+   free_list( contestants );
+}
+
+
+// Search for any two points whose distance from
+// one another is greater than the target cluster
+// diameter
+void
+first_approx_antipoles( ap_PointList *set, ap_Point **antipole_a, ap_Point **antipole_b, double target_radius, DIST_FUNC ) {
+
+   *antipole_a = NULL;
+   *antipole_b = NULL;
+
+   ap_PointList *i, *j;
+
+   // Calculate the distance between each pair of points and
+   // if a distance is greater than the target cluster diameter
+   // make the pair of points the new antipole pair and stop
+   // searching
+   for( i = set; i != NULL; i = i->next ) {
+      for( j = i->next; j != NULL; j = j->next ) {
+         if( dist( i->p, j->p ) > 2 * target_radius ) {
+            *antipole_a = i->p;
+            *antipole_b = j->p;
+            return;
+         }
+      }
+   }
+}
+
+
+// Search the set for a point that when paired with ancestor
+// could serve as an antipole pair.
+void
+check_ancestors_for_antipoles( ap_PointList *set, double target_radius, ap_Point *ancestor, ap_Point **antipole_a, ap_Point **antipole_b ) {
+
+   *antipole_a = NULL;
+   *antipole_b = NULL;
+
+   ap_PointList *i, *j;
+
+   // Search the set for a point whose distance to the ancestor
+   // is greater than 2*target_radius and save it and the
+   // ancestor as antipoles
+   for( i = set; i != NULL; i = i->next ) {
+      for( j = i->p->ancestors; j != NULL; j = j->next ) {
+         if( j->p == ancestor ) {
+            if( j->dist > 2 * target_radius ) {
+               *antipole_a = ancestor;
+               *antipole_b = i->p;
+               return;
+            }
+         }
+      }
+   }
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                  LINKED LIST OPERATIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+// Prepend to an ap_PointList an ap_Point with a distance
+// value (to an ancestor, cluster centroid, or query,
+// depending on the use of the ap_PointList). Requires the
+// address of an ap_PointList pointer so that the list can
+// be given a new first member. The ap_PointList pointer
+// should be set to NULL before calling this function if the
+// list is empty; otherwise the list may not terminate
+// properly. Returns 1 if the point was added or 0 if it was
+// not due to lack of uniqueness.
+int
+add_point( ap_PointList **list, ap_Point *p, double dist ) {
+
+   // Return if the point is already in the list
+   ap_PointList *index = *list;
+   while( index != NULL ) {
+      if( index->p == p )
+         return 0;
+      index = index->next;
+   }
+
+   ap_PointList *new_list_member = malloc( sizeof( ap_PointList ) );
+   assert( new_list_member );
+   new_list_member->p = p;
+   new_list_member->dist = dist;
+   new_list_member->next = *list;
+   *list = new_list_member;
+
+   return 1;
+}
+
+
+// Move the first instance of point p found in the
+// ap_PointList *from into the ap_PointList *to. Requires
+// the addresses of the ap_PointList pointers so that the
+// moved member can be prepended to *to, and so that if the
+// first member of ap_PointList *from is moved, the second
+// member can become the new first member. The ap_PointList
+// pointer *to should be set to NULL before calling this
+// function if the list is empty; otherwise the list may not
+// terminate properly. Returns 1 if the point was moved or 0
+// if it was not found
+int
+move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
+
+   int i = 0;
+   ap_PointList *before = NULL, *index = *from;
+
+   // Find the first ap_PointList containing p, and store the
+   // link preceding it for later user
+   while( index != NULL && index->p != p ) {
+      before = index;
+      index = index->next;
+      i++;
+   }
+
+   // Return if p was not found
+   if( index == NULL )
+      return 0;
+
+   // Remove index from *from
+   if( i == 0 )
+      *from = index->next;
+   else
+      before->next = index->next;
+
+   // Prepend index to *to
+   index->next = *to;
+   *to = index;
+
+   return 1;
+}
+
+
+// Move the n-th member (start counting at zero) of the
+// ap_PointList *from into the ap_PointList *to. Requires
+// the addresses of the ap_PointList pointers so that the
+// moved member can be prepended to *to, and so that if the
+// first member of ap_PointList *from is moved, the second
+// member can become the new first member. The ap_PointList
+// pointer *to should be set to NULL before calling this
+// function if the list is empty; otherwise the list may not
+// terminate properly. Returns 1 if the point was moved or 0
+// if n was too large.
+int
+move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
+
+   int i;
+   ap_PointList *before = NULL, *index = *from;
+
+   // Find the n-th ap_PointList, and store the link preceding
+   // it for later user
+   for( i = 0; i < n && index != NULL; i++ ) {
+      before = index;
+      index = index->next;
+   }
+
+   // Return if n was too large
+   if( index == NULL )
+      return 0;
+
+   // Remove index from *from
+   if( n == 0 )
+      *from = index->next;
+   else
+      before->next = index->next;
+
+   // Prepend index to *to
+   index->next = *to;
+   *to = index;
+
+   return 1;
+}
+
+
+// Create a new ap_PointList with the same contents as list
+// (the order will be reversed).
+ap_PointList*
+copy_list( ap_PointList *list ) {
+
+   ap_PointList *new_list = NULL;
+   while( list != NULL ) {
+      add_point( &new_list, list->p, list->dist );
+      list = list->next;
+   }
+   return new_list;
+}
+
+
+// Find the size of the list of points
+int
+list_size( ap_PointList *list ) {
+
+   int size = 0;
+   while( list != NULL ) {
+      size++;
+      list = list->next;
+   }
+   return size;
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                     HEAP OPERATIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+// Create a new ap_Heap object with a minimum capacity
+ap_Heap*
+create_heap( int capacity ) {
+
+   ap_Heap *heap = malloc( sizeof( ap_Heap ) );
+   assert( heap );
+   heap->capacity = max( capacity, 10 );
+   heap->size = 0;
+   heap->items = calloc( heap->capacity, sizeof( void* ) );
+   heap->dists = calloc( heap->capacity, sizeof( double ) );
+   assert( heap->items && heap->dists );
+   heap->max_index = -1;
+   heap->max_dist  = -1;
+
+   return heap;
+}
+
+
+// Increase the capacity of heap
+void
+heap_grow( ap_Heap *heap ) {
+
+   heap->capacity *= 2;
+   void  **temp_items = calloc( heap->capacity, sizeof( void* ) );
+   double *temp_dists = calloc( heap->capacity, sizeof( double ) );
+   assert( temp_items && temp_dists );
+
+   int i;
+   for( i = 0; i < heap->size; i++ ) {
+      temp_items[i] = heap->items[i];
+      temp_dists[i] = heap->dists[i];
+   }
+
+   free( heap->items );
+   free( heap->dists );
+   heap->items = temp_items;
+   heap->dists = temp_dists;
+}
+
+
+// Swap items at positions i and j in heap. Returns 1 if a
+// swap occurred or 0 if the indices were inapproriate
+int
+heap_swap( ap_Heap *heap, int i, int j ) {
+
+   // Return if the indices match or are out of bounds
+   if( i == j || i >= heap->size || j >= heap->size || i < 0 || j < 0 )
+      return 0;
+
+   void *temp_item  = heap->items[i];
+   double temp_dist = heap->dists[i];
+   heap->items[i] = heap->items[j];
+   heap->dists[i] = heap->dists[j];
+   heap->items[j] = temp_item;
+   heap->dists[j] = temp_dist;
+
+   return 1;
+}
+
+
+// Sift upward the item at position index in heap until it
+// is properly positioned (the heap is a min-heap).
+void
+heap_sift_up( ap_Heap* heap, int index ) {
+
+   int i, swap_done = 0;
+   int parent;
+
+   // Continue to sift the item upward until it becomes the
+   // root or until its parent has a smaller dist value than
+   // itself
+   while( index > 0 ) {
+
+      parent = ( index - 1 ) / 2;
+
+      // If index has a smaller dist than its parent, swap them
+      // and continue sifting upward
+      if( heap->dists[index] < heap->dists[parent] ) {
+         heap_swap( heap, index, parent );
+         index = parent;
+         swap_done = 1;
+      } else {
+         break;
+      }
+   }
+
+   // Find the new max item
+   if( swap_done ) {
+      heap->max_index = -1;
+      heap->max_dist  = -1;
+      for( i = heap->size / 2; i < heap->size; i++ ) {
+         if( heap->dists[i] > heap->max_dist ) {
+            heap->max_index = i;
+            heap->max_dist = heap->dists[i];
+         }
+      }
+   }
+}
+
+
+// Sift downward the item at position index in heap until it
+// is properly positioned (the heap is a min-heap).
+void
+heap_sift_down( ap_Heap *heap, int index ) {
+
+   int i, swap_done = 0;
+   int left, right, smallest_child;
+
+   // Continue to sift the item downward until it becomes a
+   // leaf or until both its children have greater dist values
+   // than itself
+   while( index < heap->size / 2 ) {
+
+      left  = 2 * index + 1;
+      right = 2 * index + 2;
+
+      // Find the smallest child of index
+      if( right >= heap->size ) {
+         smallest_child = left;
+      } else {
+         if( heap->dists[left] < heap->dists[right] )
+            smallest_child = left;
+         else
+            smallest_child = right;
+      }
+
+      // If index has a greater dist than one of its children,
+      // swap them and continue sifting downward
+      if( heap->dists[index] > heap->dists[smallest_child] ) {
+         heap_swap( heap, index, smallest_child );
+         index = smallest_child;
+         swap_done = 1;
+      } else {
+         break;
+      }
+   }
+
+   // Find the new max item
+   if( swap_done ) {
+      heap->max_index = -1;
+      heap->max_dist  = -1;
+      for( i = heap->size / 2; i < heap->size; i++ ) {
+         if( heap->dists[i] > heap->max_dist ) {
+            heap->max_index = i;
+            heap->max_dist = heap->dists[i];
+         }
+      }
+   }
+}
+
+
+// Attempt to add an item to an ap_Heap with a distance
+// value used for sorting (the heap is a min-heap). The item
+// will be inserted only if the heap has fewer items than
+// the specified limit, if a limit is not specified (use
+// limit < 1). The item will replace the max item in the
+// heap if the limit is reached and dist is smaller than
+// max_dist. Returns 1 if the item was inserted or 0 if the
+// heap was full or dist was too large.
+int
+heap_try_insert( ap_Heap *heap, int limit, void *item, double dist ) {
+
+   int i;
+
+   // Add the item to the heap if a limit is not given or the
+   // current heap size is smaller than the limit
+   if( limit < 1 || heap->size < limit ) {
+      
+      // Return if the item is already in the heap
+      for( i = 0; i < heap->size; i++ )
+         if( item == heap->items[i] )
+            return 0;
+
+      // Grow the data arrays if necessary
+      if( heap->size == heap->capacity )
+         heap_grow( heap );
+
+      // Insert the new item at the end of the array
+      i = heap->size;
+      heap->items[i] = item;
+      heap->dists[i] = dist;
+      heap->size++;
+
+      // Update max_index and max_dist if the item is the new
+      // max item or sift it upward
+      if( dist > heap->max_dist ) {
+         heap->max_index = i;
+         heap->max_dist = dist;
+      } else {
+         heap_sift_up( heap, i );
+      }
+
+      return 1;
+   } else {
+
+      // If the current heap size is not smaller than the limit,
+      // add the item only if dist is smaller than max_dist
+      if( dist < heap->max_dist ) {
+
+         // Return if the item is already in the heap
+         for( i = 0; i < heap->size; i++ )
+            if( item == heap->items[i] )
+               return 0;
+
+         // Replace the max item with the new item
+         i = heap->max_index;
+         heap->items[i] = item;
+         heap->dists[i] = dist;
+
+         // Sift the item upward
+         heap_sift_up( heap, i );
+
+         // Find the new max item (in case heap_sift_up failed to do
+         // so)
+         heap->max_index = -1;
+         heap->max_dist  = -1;
+         for( i = heap->size / 2; i < heap->size; i++ ) {
+            if( heap->dists[i] > heap->max_dist ) {
+               heap->max_index = i;
+               heap->max_dist = heap->dists[i];
+            }
+         }
+
+         return 1;
+      } else {
+
+         // Return if dist is not smaller than max_dist
+         return 0;
+      }
+   }
+}
+
+
+// Remove the first item in the heap and return a pointer to
+// it. Returns NULL if the heap is empty.
+void*
+heap_pop( ap_Heap *heap ) {
+
+   // Return if the heap is empty
+   if( heap->size == 0 )
+      return NULL;
+
+   void* first_item = heap->items[0];
+
+   // Replace the root with the last item in the list
+   heap->items[0] = heap->items[heap->size-1];
+   heap->dists[0] = heap->dists[heap->size-1];
+   heap->size--;
+
+   // Sift the moved item downward
+   heap_sift_down( heap, 0 );
+
+   return first_item;
+}
+
+
+// Create an ap_PointList from an ap_Heap. The points in the
+// list will be sorted by distance in ascending order. This
+// function assumes the items in the heap are ap_Points.
+ap_PointList*
+heap_to_list( ap_Heap *heap ) {
+
+   int i, counter = 0;
+   ap_PointList *new_list = NULL;
+
+   // Create a copy of the heap (because it will be modified
+   // below)
+   ap_Heap *new_heap = malloc( sizeof( ap_Heap ) );
+   assert( new_heap );
+   new_heap->capacity = heap->capacity;
+   new_heap->size = heap->size;
+   new_heap->items = calloc( new_heap->capacity, sizeof( void* ) );
+   new_heap->dists = calloc( new_heap->capacity, sizeof( double ) );
+   assert( new_heap->items && new_heap->dists );
+   for( i = 0; i < heap->size; i++ ) {
+      new_heap->items[i] = heap->items[i];
+      new_heap->dists[i] = heap->dists[i];
+   }
+   new_heap->max_index = heap->max_index;
+   new_heap->max_dist  = heap->max_dist;
+
+   // Sort the items in heap by distance in descending order
+   for( i = new_heap->size - 1; i > 0; i-- ) {
+      heap_swap( new_heap, 0, i );
+      new_heap->size--;
+      counter++;
+      heap_sift_down( new_heap, 0 );
+   }
+   new_heap->size += counter;
+
+   // Copy the points from the heap into a list in ascending
+   // order (the sequence of calls to add_point reverses the
+   // order)
+   for( i = 0; i < new_heap->size; i++ ) {
+      add_point( &new_list, (ap_Point*)new_heap->items[i], new_heap->dists[i] );
+   }
+   free_heap( new_heap );
+
+   return new_list;
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+               MEMORY MANAGEMENT FUNCTIONS
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+// Recursively free up memory used by an ap_Tree.
+void
+free_tree( ap_Tree *tree ) {
+
+   if( tree != NULL ) {
+      if( tree->is_leaf ) {
+         free_cluster( tree->cluster );
+      } else {
+         free_tree( tree->left );
+         free_tree( tree->right );
+      }
+      free( tree );
+   }
+}
+
+
+// Free up memory used by an ap_Cluster.
+void
+free_cluster( ap_Cluster *cluster ) {
+
+   if( cluster != NULL ) {
+      free_list( cluster->members );
+      free( cluster );
+   }
+}
+
+
+// Recursively free up memory used by an ap_PointList.
+void
+free_list( ap_PointList *list ) {
+
+   if( list != NULL ) {
+      free_list( list->next );
+      free( list );
+   }
+}
+
+
+// Free up memory used by an ap_Heap.
+void free_heap( ap_Heap *heap ) {
+
+   if( heap != NULL ) {
+      free( heap->items );
+      free( heap->dists );
+      free( heap );
    }
 }
 
