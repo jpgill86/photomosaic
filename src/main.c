@@ -342,7 +342,7 @@ main() {
 
    /*
    // Test for mem leaks in nearest_neighbor_search
-   for( i = 0; i < 1e6; i++ ) {
+   for( i = 0; i < 3e5; i++ ) {
       for( j = 0; j < n_query; j++ ) {
          free_list( results[j] );
          results[j] = NULL;

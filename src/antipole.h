@@ -60,9 +60,7 @@ struct ap_Heap {
    int size;                  /* number of items in the heap */
    void **items;              /* array of items in heap, either *ap_Points or *ap_Trees */
    double *dists;             /* array of distances to query */
-   void *min_item;            /* the item with the minimum distance to query */
-   double min_dist;           /* the minimum distance to query */
-   void *max_item;            /* the item with the maximum distance to query*/
+   int max_index;             /* the index of the item with the maximum distance to query*/
    double max_dist;           /* the maximum distance to query */
 };
 
@@ -75,8 +73,13 @@ int move_nth_point( int n, ap_PointList **from, ap_PointList **to );
 ap_PointList* copy_list( ap_PointList *set );
 int list_size( ap_PointList *set );
 
-int heap_insert( ap_Heap **heap, void *item, double key );
-int heap_remove( ap_Heap *heap, void *item );
+ap_Heap* create_heap( int capacity );
+void heap_grow( ap_Heap *heap );
+int heap_swap( ap_Heap *heap, int i, int j );
+void heap_sift_down( ap_Heap *heap, int index );
+void heap_sift_up( ap_Heap *heap, int index );
+int heap_try_insert( ap_Heap *heap, int limit, void *item, double dist );
+void* heap_pop( ap_Heap *heap );
 ap_PointList* heap_to_list( ap_Heap *heap );
 
 void free_tree( ap_Tree *tree );
@@ -96,8 +99,7 @@ void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **
 void range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
 
 void nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
-void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
-double nearest_neighbor_search_try_point( ap_Point *p, ap_Point *query, int k, ap_Heap **point_pq, DIST_FUNC );
+void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap *point_pq, DIST_FUNC );
 
 #endif /* ANTIPOLE_H */
 
