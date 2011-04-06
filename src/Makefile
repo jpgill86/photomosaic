@@ -5,6 +5,7 @@
 #    photomosaic                                             #
 #    photomosaic-debug                                       #
 #    all                                                     #
+#    profile                                                 #
 #    clean                                                   #
 # ========================================================== #
 #    Copyright (c) 2011, Jeffrey P. Gill                     #
@@ -44,6 +45,15 @@ all: $(APPS)
 
 # Name of the main build directory
 BUILD = build
+
+
+# Target for running tests and analyzing profiling data to
+# assist with optimization
+.PHONY: profile
+profile: photomosaic-debug
+	time ./$< > ~/Desktop/out
+	gprof $< > gprof.out
+	less gprof.out
 
 
 # Target for removing all files and directories created by
