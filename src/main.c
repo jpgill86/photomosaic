@@ -220,26 +220,25 @@ main() {
 
    /*
    // Check for sane heap behavior
-   ap_Heap *heap = NULL;
+   ap_Heap *heap = create_heap( true, -1 );
    for( i = 0; i < n_data; i++ )
-      heap_insert( &heap, data[i], dist( query[0], data[i] ) );
+      heap_insert( heap, data[i], dist( query[0], data[i] ) );
    printf("\n");
    for( i = 0; i < heap->size; i++ )
-      printf("(* h id=%d dist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
+      printf("(* h id=%d\tdist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
    printf("\n");
    while( heap->size > n_neighbor ) {
-      printf("(* r id=%d dist=%f *)\n", ((ap_Point*)heap->max_item)->id, heap->max_dist);
-      heap_remove( heap, heap->max_item );
+      printf("(* r id=%d\tdist=%f *)\n", ((ap_Point*)heap->items[0])->id, heap->dists[0]);
+      heap_pop( heap );
    }
    printf("\n");
    for( i = 0; i < heap->size; i++ )
-      printf("(* h id=%d dist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
+      printf("(* h id=%d\tdist=%f *)\n", ((ap_Point*)heap->items[i])->id, heap->dists[i]);
    printf("\n");
    ap_PointList *v = heap_to_list( heap );
-   ap_PointList *v_index = v;
-   while( v_index != NULL ) {
-      printf("(* l id=%d dist=%f *)\n", v_index->p->id, v_index->dist);
-      v_index = v_index->next;
+   while( v != NULL ) {
+      printf("(* l id=%d\tdist=%f *)\n", v->p->id, v->dist);
+      v = v->next;
    }
    */
 
@@ -306,24 +305,24 @@ main() {
    */
 
    /*
-   // Test for mem leaks in heap_insert, heap_remove, and
-   // free_heap
+   // Test for mem leaks in create_heap, heap_insert,
+   // heap_remove, and free_heap
    ap_Heap *heap = NULL;
    for( i = 0; i < 2e7; i++ ) {
       free_heap( heap );
-      heap = NULL;
+      heap = create_heap( false, -1 );
       for( j = 0; j < n_data; j++ )
-         heap_insert( &heap, data[j], dist( query[0], data[j] ) );
+         heap_insert( heap, data[j], dist( query[0], data[j] ) );
       while( heap->size > n_neighbor )
-         heap_remove( heap, heap->max_item );
+         heap_pop( heap );
    }
    */
 
    /*
    // Test for mem leaks in heap_to_list
-   ap_Heap *heap = NULL;
+   ap_Heap *heap = create_heap( false, -1 );
    for( i = 0; i < n_data; i++ )
-      heap_insert( &heap, data[i], dist( query[0], data[i] ) );
+      heap_insert( heap, data[i], dist( query[0], data[i] ) );
    for( i = 0; i < 2e6; i++ ) {
       free_list( heap_to_list( heap ) );
    }
@@ -398,9 +397,9 @@ main() {
          free_list( results[j] );
          results[j] = NULL;
          free_heap( point_pq );
-         point_pq = NULL;
+         point_pq = create_heap( true, n_neighbor );;
          for( k = 0; k < n_data; k++ )
-            nearest_neighbor_search_try_point( data[k], query[j], n_neighbor, &point_pq, dist );
+            nearest_neighbor_search_try_point( point_pq, data[k], dist( query[j], data[k] ) );
          results[j] = heap_to_list( point_pq );
       }
    }

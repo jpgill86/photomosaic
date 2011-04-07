@@ -64,7 +64,7 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
       if( antipole_a == NULL || antipole_b == NULL ) {
          // If it is a leaf, create a cluster from the set and return
          // the leaf
-         new_tree->is_leaf = 1;
+         new_tree->is_leaf = true;
          new_tree->cluster = build_cluster( set, dimensionality, dist );
 #ifdef DEBUG
          depth--;
@@ -74,7 +74,7 @@ build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Po
    }
 
    // If this tree is an internal node, initialize it
-   new_tree->is_leaf = 0;
+   new_tree->is_leaf = false;
    new_tree->a = antipole_a;
    new_tree->b = antipole_b;
    new_tree->radius_a = 0;
@@ -314,11 +314,11 @@ nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **o
 
    // Create the tree priority queue as a min-heap with no
    // maximum size
-   ap_Heap *tree_pq = create_heap( 0, 0 );
+   ap_Heap *tree_pq = create_heap( false, 0 );
 
    // Create the point priority queue as a max-heap with a
    // maximum size k
-   ap_Heap *point_pq = create_heap( 1, k );
+   ap_Heap *point_pq = create_heap( true, k );
 
    // Initialize the tree priority queue with the root of the
    // tree
@@ -427,7 +427,7 @@ nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, ap_Heap *
                // distance to ancestor to determine if the point is
                // definitely farther away than the farthest member of
                // point_pq
-               if( heap_is_full( point_pq) && query_ancestors->dist > point_pq->dists[0] + cluster_ancestors->dist )
+               if( heap_is_full( point_pq ) && query_ancestors->dist > point_pq->dists[0] + cluster_ancestors->dist )
                   goto next_cluster_member;
 
                // Use the triangle inequality with the cluster member's
@@ -464,15 +464,16 @@ next_cluster_member:
 // farthest member is removed to make room for p. Point p is
 // never inserted if it already exists in point_pq. This
 // function assumes that the items in point_pq are
-// ap_Points. Returns 1 if p was inserted, or 0 otherwise.
-int
+// ap_Points. Returns true if p was inserted, or false
+// otherwise.
+bool
 nearest_neighbor_search_try_point( ap_Heap *point_pq, ap_Point *p, double dist ) {
 
    // Return if p is already in the point priority queue
    int i;
    for( i = 0; i < point_pq->size; i++ )
       if( p == (ap_Point*)point_pq->items[i] )
-         return 0;
+         return false;
 
    // If the point priority queue is not full, insert p
    if( !heap_is_full( point_pq ) ) {
@@ -489,7 +490,7 @@ nearest_neighbor_search_try_point( ap_Heap *point_pq, ap_Point *p, double dist )
 
          // If the point priority queue is full and p is not nearer
          // than the farthest member of point_pq, do not insert p
-         return 0;
+         return false;
       }
    }
 }
@@ -734,16 +735,16 @@ check_ancestors_for_antipoles( ap_PointList *set, double target_radius, ap_Point
 // be given a new first member. The ap_PointList pointer
 // should be set to NULL before calling this function if the
 // list is empty; otherwise the list may not terminate
-// properly. Returns 1 if the point was added or 0 if it was
-// not due to lack of uniqueness.
-int
+// properly. Returns true if the point was added or false if
+// it was not because the point already exists in the list.
+bool
 add_point( ap_PointList **list, ap_Point *p, double dist ) {
 
    // Return if the point is already in the list
    ap_PointList *index = *list;
    while( index != NULL ) {
       if( index->p == p )
-         return 0;
+         return false;
       index = index->next;
    }
 
@@ -754,7 +755,7 @@ add_point( ap_PointList **list, ap_Point *p, double dist ) {
    new_list_member->next = *list;
    *list = new_list_member;
 
-   return 1;
+   return true;
 }
 
 
@@ -766,9 +767,9 @@ add_point( ap_PointList **list, ap_Point *p, double dist ) {
 // member can become the new first member. The ap_PointList
 // pointer *to should be set to NULL before calling this
 // function if the list is empty; otherwise the list may not
-// terminate properly. Returns 1 if the point was moved or 0
-// if it was not found
-int
+// terminate properly. Returns true if the point was moved
+// or false if it was not found.
+bool
 move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 
    int i = 0;
@@ -784,7 +785,7 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 
    // Return if p was not found
    if( index == NULL )
-      return 0;
+      return false;
 
    // Remove index from *from
    if( i == 0 )
@@ -796,7 +797,7 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
    index->next = *to;
    *to = index;
 
-   return 1;
+   return true;
 }
 
 
@@ -808,9 +809,9 @@ move_point( ap_Point *p, ap_PointList **from, ap_PointList **to ) {
 // member can become the new first member. The ap_PointList
 // pointer *to should be set to NULL before calling this
 // function if the list is empty; otherwise the list may not
-// terminate properly. Returns 1 if the point was moved or 0
-// if n was too large.
-int
+// terminate properly. Returns true if the point was moved
+// or false if n was too large.
+bool
 move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    int i;
@@ -825,7 +826,7 @@ move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
 
    // Return if n was too large
    if( index == NULL )
-      return 0;
+      return false;
 
    // Remove index from *from
    if( n == 0 )
@@ -837,7 +838,7 @@ move_nth_point( int n, ap_PointList **from, ap_PointList **to ) {
    index->next = *to;
    *to = index;
 
-   return 1;
+   return true;
 }
 
 
@@ -874,10 +875,10 @@ list_size( ap_PointList *list ) {
 
 
 // Create a new ap_Heap object. The heap is a min-heap if
-// is_max_heap is 0 or a max-heap otherwise. Use
-// max_size < 1 to create a heap that has no maximum size.
+// is_max_heap is false or a max-heap otherwise. If
+// max_size < 1, the heap will have no maximum size.
 ap_Heap*
-create_heap( int is_max_heap, int max_size ) {
+create_heap( bool is_max_heap, int max_size ) {
 
    ap_Heap *heap = malloc( sizeof( ap_Heap ) );
    assert( heap );
@@ -896,16 +897,16 @@ create_heap( int is_max_heap, int max_size ) {
 }
 
 
-// Return 0 if the heap has no maximum size or if the
+// Return false if the heap has no maximum size or if the
 // current heap size is smaller than the maximum size, or
-// return 1 otherwise.
-int
+// return true otherwise.
+bool
 heap_is_full( ap_Heap *heap ) {
 
    if( heap->max_size < 1 || heap->size < heap->max_size )
-      return 0;
+      return false;
    else
-      return 1;
+      return true;
 }
 
 
@@ -931,14 +932,15 @@ heap_grow( ap_Heap *heap ) {
 }
 
 
-// Swap items at positions i and j in heap. Returns 1 if a
-// swap occurred or 0 if the indices were inapproriate
-int
+// Swap items at positions i and j in heap. Returns true if
+// a swap occurred or false if the indices were
+// inapproriate.
+bool
 heap_swap( ap_Heap *heap, int i, int j ) {
 
    // Return if the indices match or are out of bounds
    if( i == j || i >= heap->size || j >= heap->size || i < 0 || j < 0 )
-      return 0;
+      return false;
 
    void *temp_item  = heap->items[i];
    double temp_dist = heap->dists[i];
@@ -947,7 +949,7 @@ heap_swap( ap_Heap *heap, int i, int j ) {
    heap->items[j] = temp_item;
    heap->dists[j] = temp_dist;
 
-   return 1;
+   return true;
 }
 
 
@@ -1027,8 +1029,9 @@ heap_sift_down( ap_Heap *heap, int index ) {
 // Add an item to an ap_Heap with a distance value used for
 // sorting. The item will be inserted only if the heap does
 // not already contain the maximum number of items. Returns
-// 1 if the item was inserted or 0 if the heap was full.
-int
+// true if the item was inserted or false if the heap was
+// full.
+bool
 heap_insert( ap_Heap *heap, void *item, double dist ) {
 
    int i;
@@ -1049,11 +1052,11 @@ heap_insert( ap_Heap *heap, void *item, double dist ) {
       // Sift the new item upward
       heap_sift_up( heap, i );
 
-      return 1;
+      return true;
    } else {
 
       // Return if the heap has reached its maximum size
-      return 0;
+      return false;
    }
 }
 
