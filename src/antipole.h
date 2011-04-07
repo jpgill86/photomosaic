@@ -56,12 +56,12 @@ struct ap_Tree {
 };
 
 struct ap_Heap {
-   int capacity;              /* number of items that can be stored before the arrays need to grow */
+   int is_max_heap;           /* can be a max-heap or a min-heap */
+   int max_size;              /* max number of items the heap is permitted to contain */
    int size;                  /* number of items in the heap */
+   int capacity;              /* number of items that can be stored before the arrays need to grow */
    void **items;              /* array of items in heap, either *ap_Points or *ap_Trees */
    double *dists;             /* array of distances to query */
-   int max_index;             /* the index of the item with the maximum distance to query*/
-   double max_dist;           /* the maximum distance to query */
 };
 
 ap_Tree* build_tree( ap_PointList *set, double target_radius, ap_Point *antipole_a, ap_Point *antipole_b, int dimensionality, DIST_FUNC );
@@ -70,7 +70,8 @@ ap_Cluster* build_cluster( ap_PointList *set, int dimensionality, DIST_FUNC );
 void range_search( ap_Tree *tree, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
 void range_search_cluster( ap_Cluster *cluster, ap_Point *query, double range, ap_PointList **out, DIST_FUNC );
 void nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **out, DIST_FUNC );
-void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap *point_pq, DIST_FUNC );
+void nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, ap_Heap *point_pq, DIST_FUNC );
+int nearest_neighbor_search_try_point( ap_Heap *point_pq, ap_Point *p, double dist );
 
 void exact_1_median( ap_PointList *set, ap_Point **median, DIST_FUNC );
 void approx_1_median( ap_PointList *set, ap_Point **median, int dimensionality, DIST_FUNC );
@@ -85,12 +86,13 @@ int move_nth_point( int n, ap_PointList **from, ap_PointList **to );
 ap_PointList* copy_list( ap_PointList *set );
 int list_size( ap_PointList *set );
 
-ap_Heap* create_heap( int capacity );
+ap_Heap* create_heap( int is_max_heap, int max_size );
+int heap_is_full( ap_Heap *heap );
 void heap_grow( ap_Heap *heap );
 int heap_swap( ap_Heap *heap, int i, int j );
 void heap_sift_down( ap_Heap *heap, int index );
 void heap_sift_up( ap_Heap *heap, int index );
-int heap_try_insert( ap_Heap *heap, int limit, void *item, double dist );
+int heap_insert( ap_Heap *heap, void *item, double dist );
 void* heap_pop( ap_Heap *heap );
 ap_PointList* heap_to_list( ap_Heap *heap );
 

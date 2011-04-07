@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       145,          7]
-NotebookDataLength[      5387,        129]
-NotebookOptionsPosition[      4853,        109]
-NotebookOutlinePosition[      5403,        129]
-CellTagsIndexPosition[      5360,        126]
+NotebookDataLength[      5958,        143]
+NotebookOptionsPosition[      5424,        123]
+NotebookOutlinePosition[      5973,        143]
+CellTagsIndexPosition[      5930,        140]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -30,7 +30,9 @@ Cell[BoxData[
   3.5105916086605253`*^9, 3.51059165587731*^9}, {3.510591794083186*^9, 
   3.510591794279152*^9}, {3.510591832994771*^9, 3.510591865155242*^9}, {
   3.5105923665878677`*^9, 3.5105923668998337`*^9}, {3.5105969732597017`*^9, 
-  3.5105969736106977`*^9}, {3.5106010602045183`*^9, 3.510601061726758*^9}}],
+  3.5105969736106977`*^9}, {3.5106010602045183`*^9, 3.510601061726758*^9}, {
+  3.511144829185833*^9, 3.511144832404522*^9}, {3.511144883029767*^9, 
+  3.5111448838586903`*^9}, {3.511144989582588*^9, 3.511145000094738*^9}}],
 
 Cell[BoxData[{
  RowBox[{
@@ -43,11 +45,22 @@ Cell[BoxData[{
      RowBox[{"PlotMarkers", "\[Rule]", 
       RowBox[{"ToString", "/@", 
        RowBox[{"Range", "[", 
-        RowBox[{"1", ",", 
-         RowBox[{"Length", "[", "data", "]"}]}], "]"}]}]}]}], "]"}]}], 
+        RowBox[{"1", ",", "nData"}], "]"}]}]}]}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"p2", "=", 
+   RowBox[{"ListPlot", "[", 
+    RowBox[{
+     RowBox[{"Partition", "[", 
+      RowBox[{"query", ",", "1"}], "]"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", "Blue"}], ",", 
+     RowBox[{"PlotMarkers", "\[Rule]", 
+      RowBox[{"ToString", "/@", 
+       RowBox[{"Range", "[", 
+        RowBox[{"1", ",", "nQuery"}], "]"}]}]}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"p3", "=", 
    RowBox[{"ListPlot", "[", 
     RowBox[{
      RowBox[{"Partition", "[", 
@@ -57,12 +70,12 @@ Cell[BoxData[{
          RowBox[{"Part", "[", 
           RowBox[{"data", ",", "#"}], "]"}], "&"}], "/@", "highlight"}], ",", 
        "1"}], "]"}], ",", 
-     RowBox[{"PlotStyle", "\[Rule]", "Blue"}], ",", 
+     RowBox[{"PlotStyle", "\[Rule]", "Red"}], ",", 
      RowBox[{"PlotMarkers", "\[Rule]", 
       RowBox[{"ToString", "/@", "highlight"}]}]}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{"Show", "[", 
-  RowBox[{"p1", ",", "p2", ",", 
+  RowBox[{"p1", ",", "p2", ",", "p3", ",", 
    RowBox[{"PlotRange", "\[Rule]", 
     RowBox[{"{", 
      RowBox[{
@@ -105,10 +118,11 @@ Cell[BoxData[{
    3.510591591749542*^9}, {3.510591702241837*^9, 3.510591714220083*^9}, {
    3.510591755814529*^9, 3.510591757812388*^9}, {3.510592014642454*^9, 
    3.510592069700901*^9}, {3.510592143611506*^9, 3.510592184185701*^9}, {
-   3.510857521805615*^9, 3.51085753168988*^9}}]
+   3.510857521805615*^9, 3.51085753168988*^9}, {3.511144707165471*^9, 
+   3.511144843500395*^9}}]
 },
 WindowSize->{861, 640},
-WindowMargins->{{Automatic, 142}, {52, Automatic}},
+WindowMargins->{{48, Automatic}, {Automatic, 44}},
 PrintingPageRange->{Automatic, Automatic},
 PrintingOptions->{"Magnification"->1.,
 "PaperOrientation"->"Portrait",
@@ -129,8 +143,8 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[545, 20, 131, 2, 32, "Input"],
-Cell[679, 24, 466, 8, 32, "Input"],
-Cell[1148, 34, 3701, 73, 143, "Input"]
+Cell[679, 24, 612, 10, 32, "Input"],
+Cell[1294, 36, 4126, 85, 187, "Input"]
 }
 ]
 *)

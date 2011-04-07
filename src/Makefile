@@ -51,7 +51,7 @@ BUILD = build
 # assist with optimization
 .PHONY: profile
 profile: photomosaic-debug
-	time ./$< > ~/Desktop/out
+	time -p ./$< > ~/Desktop/out
 	gprof $< > gprof.out
 	less gprof.out
 

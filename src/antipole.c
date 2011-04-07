@@ -311,11 +311,18 @@ nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **o
 
    double dist_a, dist_b;
    ap_Tree *index;
-   ap_Heap *tree_pq = create_heap( 0 ), *point_pq = create_heap( k );
+
+   // Create the tree priority queue as a min-heap with no
+   // maximum size
+   ap_Heap *tree_pq = create_heap( 0, 0 );
+
+   // Create the point priority queue as a max-heap with a
+   // maximum size k
+   ap_Heap *point_pq = create_heap( 1, k );
 
    // Initialize the tree priority queue with the root of the
    // tree
-   heap_try_insert( tree_pq, 0, tree, -1 );
+   heap_insert( tree_pq, tree, -1 );
 
    // Search through the subtrees in order of proximity to the
    // query until there are no more subtrees to search or the
@@ -323,35 +330,38 @@ nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **o
    // the k points already found
    while( tree_pq->size > 0 ) {
 
-      // If the next nearest subtree is farther away than the
-      // farthest member of point_pq, then quit
-      if( point_pq->size == k && tree_pq->dists[0] > point_pq->max_dist )
+      // If point_pq already has k points and the next nearest
+      // subtree is not nearer than the farthest member of
+      // point_pq, then stop searching
+      if( heap_is_full( point_pq ) && tree_pq->dists[0] >= point_pq->dists[0] )
          break;
 
       // Get the next subtree in the tree priority queue
       index = (ap_Tree*)heap_pop( tree_pq );
 
       if( !index->is_leaf ) {
-         // Calculate the distance between query and the antipoles,
-         // store these values in the ancestor list for query, and
-         // add each antipole to the point priority queue if it is
-         // nearer than than the queue's farthest member
+         // Calculate the distance between query and the antipoles
+         // and store these values in the ancestor list for query
          dist_a = dist( index->a, query );
          dist_b = dist( index->b, query );
-         heap_try_insert( point_pq, k, index->a, dist_a );
-         heap_try_insert( point_pq, k, index->b, dist_b );
          /*
          add_point( &(query->ancestors), index->a, dist_a );
          add_point( &(query->ancestors), index->b, dist_b );
          */
 
+         // If either antipole is nearer to the query than the point
+         // priority queue's farthest member, add it to point_pq
+         nearest_neighbor_search_try_point( point_pq, index->a, dist_a );
+         nearest_neighbor_search_try_point( point_pq, index->b, dist_b );
+
          // Add the subtree's children to the tree priority queue
-         heap_try_insert( tree_pq, 0, index->left,  dist_a - index->radius_a );
-         heap_try_insert( tree_pq, 0, index->right, dist_b - index->radius_b );
+         heap_insert( tree_pq, index->left,  dist_a - index->radius_a );
+         heap_insert( tree_pq, index->right, dist_b - index->radius_b );
       } else {
+
          // If tree is a leaf, search its cluster for points that
          // should be added to the point priority queue
-         nearest_neighbor_search_cluster( index->cluster, query, k, point_pq, dist );
+         nearest_neighbor_search_cluster( index->cluster, query, point_pq, dist );
       }
    }
 
@@ -370,18 +380,18 @@ nearest_neighbor_search( ap_Tree *tree, ap_Point *query, int k, ap_PointList **o
 // query than any of the k points already found in the point
 // priority queue and place them in point_pq.
 void
-nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap_Heap *point_pq, DIST_FUNC ) {
+nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, ap_Heap *point_pq, DIST_FUNC ) {
 
    // Calculate the distance between the query and the centroid
    // and add it to point_pq if it is nearer than the queue's
    // farthest member
    double d, dist_centroid = dist( cluster->centroid, query );
-   heap_try_insert( point_pq, k, cluster->centroid, dist_centroid );
+   nearest_neighbor_search_try_point( point_pq, cluster->centroid, dist_centroid );
 
    // Use the triangle inequality with the cluster radius to
    // determine if the entire cluster can be excluded as a
    // group
-   if( point_pq->size == k && dist_centroid > point_pq->max_dist + cluster->radius )
+   if( heap_is_full( point_pq ) && dist_centroid >= point_pq->dists[0] + cluster->radius )
       return;
 
    // Check each member of the cluster
@@ -394,15 +404,15 @@ nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap
       // distance to centroid to determine if the point is
       // definitely farther away than the farthest member of
       // point_pq
-      if( point_pq->size == k && dist_centroid > point_pq->max_dist + index->dist )
+      if( heap_is_full( point_pq ) && dist_centroid > point_pq->dists[0] + index->dist )
          goto next_cluster_member;
 
       // Use the triangle inequality with the cluster member's
       // distance to centroid to determine if the point is
       // definitely nearer than the farthest member of point_pq
-      if( dist_centroid <= point_pq->max_dist - index->dist ) {
+      if( dist_centroid <= point_pq->dists[0] - index->dist ) {
          d = dist( index->p, query );
-         heap_try_insert( point_pq, k, index->p, d );
+         nearest_neighbor_search_try_point( point_pq, index->p, d );
          goto next_cluster_member;
       }
 
@@ -417,15 +427,15 @@ nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap
                // distance to ancestor to determine if the point is
                // definitely farther away than the farthest member of
                // point_pq
-               if( point_pq->size == k && query_ancestors->dist > point_pq->max_dist + cluster_ancestors->dist )
+               if( heap_is_full( point_pq) && query_ancestors->dist > point_pq->dists[0] + cluster_ancestors->dist )
                   goto next_cluster_member;
 
                // Use the triangle inequality with the cluster member's
                // distance to ancestor to determine if the point is
                // definitely nearer than the farthest member of point_pq
-               if( query_ancestors->dist <= point_pq->max_dist - cluster_ancestors->dist ) {
+               if( query_ancestors->dist <= point_pq->dists[0] - cluster_ancestors->dist ) {
                   d = dist( index->p, query );
-                  heap_try_insert( point_pq, k, index->p, d );
+                  nearest_neighbor_search_try_point( point_pq, index->p, d );
                   goto next_cluster_member;
                }
             }
@@ -439,10 +449,48 @@ nearest_neighbor_search_cluster( ap_Cluster *cluster, ap_Point *query, int k, ap
       // member and add it to point_pq if it is nearer than the
       // queue's farthest member
       d = dist( index->p, query );
-      heap_try_insert( point_pq, k, index->p, d );
+      nearest_neighbor_search_try_point( point_pq, index->p, d );
 
 next_cluster_member:
       index = index->next;
+   }
+}
+
+
+// Attempt to insert p into the point priority queue. Point
+// p will be inserted if point_pq is not yet full. If
+// point_pq is full, p will only be inserted if it is nearer
+// than the farthest member of point_pq. In this case, the
+// farthest member is removed to make room for p. Point p is
+// never inserted if it already exists in point_pq. This
+// function assumes that the items in point_pq are
+// ap_Points. Returns 1 if p was inserted, or 0 otherwise.
+int
+nearest_neighbor_search_try_point( ap_Heap *point_pq, ap_Point *p, double dist ) {
+
+   // Return if p is already in the point priority queue
+   int i;
+   for( i = 0; i < point_pq->size; i++ )
+      if( p == (ap_Point*)point_pq->items[i] )
+         return 0;
+
+   // If the point priority queue is not full, insert p
+   if( !heap_is_full( point_pq ) ) {
+      return heap_insert( point_pq, p, dist );
+   } else {
+
+      // If the point priority queue is full and p is nearer than
+      // the farthest member of point_pq, remove the farthest
+      // member of point_pq and insert p
+      if( dist < point_pq->dists[0] ) {
+         heap_pop( point_pq );
+         return heap_insert( point_pq, p, dist );
+      } else {
+
+         // If the point priority queue is full and p is not nearer
+         // than the farthest member of point_pq, do not insert p
+         return 0;
+      }
    }
 }
 
@@ -825,21 +873,39 @@ list_size( ap_PointList *list ) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
-// Create a new ap_Heap object with a minimum capacity
+// Create a new ap_Heap object. The heap is a min-heap if
+// is_max_heap is 0 or a max-heap otherwise. Use
+// max_size < 1 to create a heap that has no maximum size.
 ap_Heap*
-create_heap( int capacity ) {
+create_heap( int is_max_heap, int max_size ) {
 
    ap_Heap *heap = malloc( sizeof( ap_Heap ) );
    assert( heap );
-   heap->capacity = max( capacity, 10 );
+   heap->is_max_heap = is_max_heap;
+   heap->max_size = max_size;
    heap->size = 0;
+   if( max_size < 1 )
+      heap->capacity = 10;
+   else
+      heap->capacity = max_size;
    heap->items = calloc( heap->capacity, sizeof( void* ) );
    heap->dists = calloc( heap->capacity, sizeof( double ) );
    assert( heap->items && heap->dists );
-   heap->max_index = -1;
-   heap->max_dist  = -1;
 
    return heap;
+}
+
+
+// Return 0 if the heap has no maximum size or if the
+// current heap size is smaller than the maximum size, or
+// return 1 otherwise.
+int
+heap_is_full( ap_Heap *heap ) {
+
+   if( heap->max_size < 1 || heap->size < heap->max_size )
+      return 0;
+   else
+      return 1;
 }
 
 
@@ -886,118 +952,90 @@ heap_swap( ap_Heap *heap, int i, int j ) {
 
 
 // Sift upward the item at position index in heap until it
-// is properly positioned (the heap is a min-heap).
+// is properly positioned.
 void
 heap_sift_up( ap_Heap* heap, int index ) {
 
-   int i, swap_done = 0;
    int parent;
 
-   // Continue to sift the item upward until it becomes the
-   // root or until its parent has a smaller dist value than
-   // itself
+   // Repeatedly sift the item upward, stopping if it
+   // becomes the root
    while( index > 0 ) {
 
       parent = ( index - 1 ) / 2;
 
-      // If index has a smaller dist than its parent, swap them
+      // If index has a greater/lesser dist than its parent and
+      // the heap is a max-/min-heap, swap index and its parent
       // and continue sifting upward
-      if( heap->dists[index] < heap->dists[parent] ) {
+      if( ( heap->is_max_heap && heap->dists[index] > heap->dists[parent] ) ||
+         ( !heap->is_max_heap && heap->dists[index] < heap->dists[parent] ) ) {
          heap_swap( heap, index, parent );
          index = parent;
-         swap_done = 1;
       } else {
-         break;
-      }
-   }
 
-   // Find the new max item
-   if( swap_done ) {
-      heap->max_index = -1;
-      heap->max_dist  = -1;
-      for( i = heap->size / 2; i < heap->size; i++ ) {
-         if( heap->dists[i] > heap->max_dist ) {
-            heap->max_index = i;
-            heap->max_dist = heap->dists[i];
-         }
+         // Stop if index is properly positioned
+         break;
       }
    }
 }
 
 
 // Sift downward the item at position index in heap until it
-// is properly positioned (the heap is a min-heap).
+// is properly positioned.
 void
 heap_sift_down( ap_Heap *heap, int index ) {
 
-   int i, swap_done = 0;
-   int left, right, smallest_child;
+   int left, right, child;
 
-   // Continue to sift the item downward until it becomes a
-   // leaf or until both its children have greater dist values
-   // than itself
+   // Repeatedly sift the item downward, stopping if it becomes
+   // a leaf
    while( index < heap->size / 2 ) {
 
       left  = 2 * index + 1;
       right = 2 * index + 2;
 
-      // Find the smallest child of index
+      // If index only has one child, find its index
       if( right >= heap->size ) {
-         smallest_child = left;
+         child = left;
       } else {
-         if( heap->dists[left] < heap->dists[right] )
-            smallest_child = left;
+
+         // Find the child with the greater/lesser dist if the heap
+         // is a max-/min-heap
+         if( ( heap->is_max_heap && heap->dists[left] > heap->dists[right] ) ||
+            ( !heap->is_max_heap && heap->dists[left] < heap->dists[right] ) )
+            child = left;
          else
-            smallest_child = right;
+            child = right;
       }
 
-      // If index has a greater dist than one of its children,
-      // swap them and continue sifting downward
-      if( heap->dists[index] > heap->dists[smallest_child] ) {
-         heap_swap( heap, index, smallest_child );
-         index = smallest_child;
-         swap_done = 1;
+      // If index has a lesser/greater dist than one of its
+      // children and the heap is a max-/min-heap, swap index and
+      // the greater/lesser child and continue sifting upward
+      if( ( heap->is_max_heap && heap->dists[index] < heap->dists[child] ) ||
+         ( !heap->is_max_heap && heap->dists[index] > heap->dists[child] ) ) {
+         heap_swap( heap, index, child );
+         index = child;
       } else {
-         break;
-      }
-   }
 
-   // Find the new max item
-   if( swap_done ) {
-      heap->max_index = -1;
-      heap->max_dist  = -1;
-      for( i = heap->size / 2; i < heap->size; i++ ) {
-         if( heap->dists[i] > heap->max_dist ) {
-            heap->max_index = i;
-            heap->max_dist = heap->dists[i];
-         }
+         // Stop if index is properly positioned
+         break;
       }
    }
 }
 
 
-// Attempt to add an item to an ap_Heap with a distance
-// value used for sorting (the heap is a min-heap). The item
-// will be inserted only if the heap has fewer items than
-// the specified limit, if a limit is not specified (use
-// limit < 1). The item will replace the max item in the
-// heap if the limit is reached and dist is smaller than
-// max_dist. Returns 1 if the item was inserted or 0 if the
-// heap was full or dist was too large.
+// Add an item to an ap_Heap with a distance value used for
+// sorting. The item will be inserted only if the heap does
+// not already contain the maximum number of items. Returns
+// 1 if the item was inserted or 0 if the heap was full.
 int
-heap_try_insert( ap_Heap *heap, int limit, void *item, double dist ) {
+heap_insert( ap_Heap *heap, void *item, double dist ) {
 
    int i;
 
-   // Add the item to the heap if a limit is not given or the
-   // current heap size is smaller than the limit
-   if( limit < 1 || heap->size < limit ) {
+   // Add the item to the heap only if it is not full
+   if( !heap_is_full( heap ) ) {
       
-      // Return if the item is already in the heap
-      for( i = 0; i < heap->size; i++ )
-         if( item == heap->items[i] )
-            return 0;
-
       // Grow the data arrays if necessary
       if( heap->size == heap->capacity )
          heap_grow( heap );
@@ -1008,52 +1046,14 @@ heap_try_insert( ap_Heap *heap, int limit, void *item, double dist ) {
       heap->dists[i] = dist;
       heap->size++;
 
-      // Update max_index and max_dist if the item is the new
-      // max item or sift it upward
-      if( dist > heap->max_dist ) {
-         heap->max_index = i;
-         heap->max_dist = dist;
-      } else {
-         heap_sift_up( heap, i );
-      }
+      // Sift the new item upward
+      heap_sift_up( heap, i );
 
       return 1;
    } else {
 
-      // If the current heap size is not smaller than the limit,
-      // add the item only if dist is smaller than max_dist
-      if( dist < heap->max_dist ) {
-
-         // Return if the item is already in the heap
-         for( i = 0; i < heap->size; i++ )
-            if( item == heap->items[i] )
-               return 0;
-
-         // Replace the max item with the new item
-         i = heap->max_index;
-         heap->items[i] = item;
-         heap->dists[i] = dist;
-
-         // Sift the item upward
-         heap_sift_up( heap, i );
-
-         // Find the new max item (in case heap_sift_up failed to do
-         // so)
-         heap->max_index = -1;
-         heap->max_dist  = -1;
-         for( i = heap->size / 2; i < heap->size; i++ ) {
-            if( heap->dists[i] > heap->max_dist ) {
-               heap->max_index = i;
-               heap->max_dist = heap->dists[i];
-            }
-         }
-
-         return 1;
-      } else {
-
-         // Return if dist is not smaller than max_dist
-         return 0;
-      }
+      // Return if the heap has reached its maximum size
+      return 0;
    }
 }
 
@@ -1082,20 +1082,24 @@ heap_pop( ap_Heap *heap ) {
 
 
 // Create an ap_PointList from an ap_Heap. The points in the
-// list will be sorted by distance in ascending order. This
-// function assumes the items in the heap are ap_Points.
+// list will be sorted by distance in ascending/descending
+// order if the heap is a max-/min-heap. This function
+// assumes the items in the heap are ap_Points.
 ap_PointList*
 heap_to_list( ap_Heap *heap ) {
 
-   int i, counter = 0;
+   int i;
+   double dist;
    ap_PointList *new_list = NULL;
 
-   // Create a copy of the heap (because it will be modified
+   // Create a copy of the heap (because it will be destroyed
    // below)
    ap_Heap *new_heap = malloc( sizeof( ap_Heap ) );
    assert( new_heap );
-   new_heap->capacity = heap->capacity;
+   new_heap->is_max_heap = heap->is_max_heap;
+   new_heap->max_size = heap->max_size;
    new_heap->size = heap->size;
+   new_heap->capacity = heap->capacity;
    new_heap->items = calloc( new_heap->capacity, sizeof( void* ) );
    new_heap->dists = calloc( new_heap->capacity, sizeof( double ) );
    assert( new_heap->items && new_heap->dists );
@@ -1103,23 +1107,12 @@ heap_to_list( ap_Heap *heap ) {
       new_heap->items[i] = heap->items[i];
       new_heap->dists[i] = heap->dists[i];
    }
-   new_heap->max_index = heap->max_index;
-   new_heap->max_dist  = heap->max_dist;
 
-   // Sort the items in heap by distance in descending order
-   for( i = new_heap->size - 1; i > 0; i-- ) {
-      heap_swap( new_heap, 0, i );
-      new_heap->size--;
-      counter++;
-      heap_sift_down( new_heap, 0 );
-   }
-   new_heap->size += counter;
-
-   // Copy the points from the heap into a list in ascending
-   // order (the sequence of calls to add_point reverses the
-   // order)
-   for( i = 0; i < new_heap->size; i++ ) {
-      add_point( &new_list, (ap_Point*)new_heap->items[i], new_heap->dists[i] );
+   // Copy the points from the heap into a list (the sequence
+   // of calls to add_point reverses the order)
+   while( new_heap->size > 0 ) {
+      dist = new_heap->dists[0];
+      add_point( &new_list, (ap_Point*)heap_pop( new_heap ), dist );
    }
    free_heap( new_heap );
 
